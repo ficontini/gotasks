@@ -7,13 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const taskColl = "tasks"
 
 type TaskStore interface {
 	GetTaskByID(context.Context, string) (*types.Task, error)
-	GetTasks(context.Context) ([]*types.Task, error)
+	GetTasks(context.Context, Map, *Pagination) ([]*types.Task, error)
 	InsertTask(context.Context, *types.Task) (*types.Task, error)
 	UpdateTask(context.Context, Map, types.UpdateTaskParams) error
 	DeleteTask(context.Context, string) error
@@ -78,8 +79,12 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Tas
 	}
 	return task, nil
 }
-func (s *MongoTaskStore) GetTasks(ctx context.Context) ([]*types.Task, error) {
-	cur, err := s.coll.Find(ctx, bson.M{})
+func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
+	pagination.CheckDefaultPaginationValues()
+	opts := &options.FindOptions{}
+	opts.SetSkip((pagination.Page - 1) * pagination.Limit)
+	opts.SetLimit(pagination.Limit)
+	cur, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

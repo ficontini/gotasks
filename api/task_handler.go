@@ -32,12 +32,30 @@ func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	return c.JSON(task)
 }
 
+type TaskQueryParams struct {
+	db.Pagination
+	Completed *bool
+}
+
+// TODO: review
+func createCompletionFilter(completed *bool) db.Map {
+	if completed != nil {
+		return db.Map{"completed": completed}
+	} else {
+		return nil
+	}
+}
 func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
-	tasks, err := h.taskStore.GetTasks(c.Context())
+	var params TaskQueryParams
+	if err := c.QueryParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	tasks, err := h.taskStore.GetTasks(c.Context(), createCompletionFilter(params.Completed), &params.Pagination)
 	if err != nil {
 		return ErrResourceNotFound()
 	}
-	return c.JSON(tasks)
+	resp := NewResourceResponse(tasks, len(tasks), params.Page)
+	return c.JSON(resp)
 }
 
 func (h *TaskHandler) HandlePostTask(c *fiber.Ctx) error {
@@ -60,6 +78,9 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	completed, err := h.isTaskCompleted(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrResourceNotFound()
+		}
 		return err
 	}
 	if completed {
