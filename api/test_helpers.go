@@ -31,6 +31,13 @@ func setup(t *testing.T) *testdb {
 		client: client,
 		Store: &db.Store{
 			Task: db.NewMongoTaskStore(client),
+			User: db.NewMongoUserStore(client),
 		},
+	}
+}
+
+func checkStatusCode(t *testing.T, expected, actual int) {
+	if actual != expected {
+		t.Fatalf("expected %d status code, but got %d", expected, actual)
 	}
 }

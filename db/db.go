@@ -1,6 +1,10 @@
 package db
 
-import "errors"
+import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
 
 const (
 	DBNAME        = "gotasks"
@@ -28,7 +32,16 @@ func (p *Pagination) CheckDefaultPaginationValues() {
 		p.Page = DEFAULT_PAGE
 	}
 }
+func (p *Pagination) getOptions() *options.FindOptions {
+	p.CheckDefaultPaginationValues()
+	opts := &options.FindOptions{}
+	opts.SetSkip((p.Page - 1) * p.Limit)
+	opts.SetLimit(p.Limit)
+	return opts
+}
 
 type Store struct {
-	Task TaskStore
+	Task    TaskStore
+	User    UserStore
+	Project ProjectStore
 }

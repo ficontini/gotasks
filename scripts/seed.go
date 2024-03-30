@@ -26,11 +26,13 @@ func main() {
 	}
 	store := &db.Store{
 		Task: db.NewMongoTaskStore(client),
+		User: db.NewMongoUserStore(client),
 	}
 	for i := 0; i < 100; i++ {
 		title := fmt.Sprintf("task%d", i)
 		description := fmt.Sprintf("description of task%d", i)
 		fixtures.AddTask(store, title, description, time.Now().AddDate(0, 0, rand.Intn(10)), rand.Intn(2) == 0)
 	}
+	fixtures.AddUser(store, "james", "foobaz", "supersecurepassword")
 	fmt.Println("seeding the database")
 }

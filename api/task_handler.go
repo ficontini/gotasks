@@ -8,7 +8,6 @@ import (
 	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TaskHandler struct {
@@ -24,8 +23,8 @@ func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	task, err := h.taskStore.GetTaskByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrResourceNotFound()
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound("task")
 		}
 		return err
 	}
@@ -52,7 +51,7 @@ func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
 	}
 	tasks, err := h.taskStore.GetTasks(c.Context(), createCompletionFilter(params.Completed), &params.Pagination)
 	if err != nil {
-		return ErrResourceNotFound()
+		return ErrResourceNotFound("task")
 	}
 	resp := NewResourceResponse(tasks, len(tasks), params.Page)
 	return c.JSON(resp)
@@ -78,13 +77,10 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	completed, err := h.isTaskCompleted(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrResourceNotFound()
-		}
 		return err
 	}
 	if completed {
-		return NewError(http.StatusBadRequest, "Task already completed")
+		return ErrBadRequestCustomMessage("task already completed")
 	}
 	filter := db.Map{"_id": id}
 	params := types.UpdateTaskParams{
@@ -92,7 +88,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	}
 	if err = h.taskStore.UpdateTask(c.Context(), filter, params); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
-			return ErrResourceNotFound()
+			return ErrResourceNotFound("task")
 		}
 		return err
 	}
@@ -103,7 +99,7 @@ func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.taskStore.DeleteTask(c.Context(), id); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
-			return ErrResourceNotFound()
+			return ErrResourceNotFound("task")
 		}
 		return err
 	}
@@ -113,6 +109,9 @@ func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 func (h *TaskHandler) isTaskCompleted(ctx context.Context, id string) (bool, error) {
 	task, err := h.taskStore.GetTaskByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return false, ErrResourceNotFound("task")
+		}
 		return false, err
 	}
 	return task.Completed, nil

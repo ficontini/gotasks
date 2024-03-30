@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -21,4 +22,20 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 		log.Fatal(err)
 	}
 	return insertedTask
+}
+func AddUser(store *db.Store, fn, ln, pwd string) *types.User {
+	user, err := types.NewUserFromParams(types.CreateUserParams{
+		FirstName: fn,
+		LastName:  ln,
+		Email:     fmt.Sprintf("%s@%s.com", fn, ln),
+		Password:  pwd,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	insertedUser, err := store.User.InsertUser(context.Background(), user)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return insertedUser
 }

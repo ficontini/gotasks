@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -34,6 +35,18 @@ func ErrInvalidID() Error {
 func ErrBadRequest() Error {
 	return NewError(http.StatusBadRequest, "invalid JSON request")
 }
-func ErrResourceNotFound() Error {
-	return NewError(http.StatusNotFound, "resource not found")
+func ErrBadRequestCustomMessage(msg string) Error {
+	return NewError(http.StatusBadRequest, msg)
+}
+func ErrResourceNotFound(resource string) Error {
+	return NewError(http.StatusNotFound, fmt.Sprintf("%s resource not found", resource))
+}
+func ErrUnAuthorized() Error {
+	return NewError(http.StatusUnauthorized, "unathorized request")
+}
+func ErrInvalidCredentials() Error {
+	return NewError(http.StatusUnauthorized, "invalid credentials")
+}
+func ErrInternalServer() Error {
+	return NewError(http.StatusInternalServerError, "internal server error")
 }

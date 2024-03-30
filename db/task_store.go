@@ -2,12 +2,12 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ficontini/gotasks/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const taskColl = "tasks"
@@ -57,7 +57,7 @@ func (s *MongoTaskStore) UpdateTask(ctx context.Context, filter Map, params type
 func (s *MongoTaskStore) DeleteTask(ctx context.Context, id string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return ErrorNotFound
+		return err
 	}
 	res, err := s.coll.DeleteOne(ctx, bson.M{"_id": oid})
 	if err != nil {
@@ -75,15 +75,15 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Tas
 	}
 	var task *types.Task
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&task); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrorNotFound
+		}
 		return nil, err
 	}
 	return task, nil
 }
 func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
-	pagination.CheckDefaultPaginationValues()
-	opts := &options.FindOptions{}
-	opts.SetSkip((pagination.Page - 1) * pagination.Limit)
-	opts.SetLimit(pagination.Limit)
+	opts := pagination.getOptions()
 	cur, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err

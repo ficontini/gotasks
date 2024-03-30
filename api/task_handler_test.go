@@ -12,7 +12,6 @@ import (
 	"github.com/ficontini/gotasks/db/fixtures"
 	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestPostTaskSuccess(t *testing.T) {
@@ -129,7 +128,7 @@ func TestDeleteTaskWithWrongID(t *testing.T) {
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		taskHandler = NewTaskHandler(db.Task)
-		wrongID, _  = primitive.ObjectIDFromHex("notavalidobjectid")
+		wrongID     = "609c4b22a2c2d9c3f83a01f6"
 	)
 	app.Delete("/:id", taskHandler.HandleDeleteTask)
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/%s", wrongID), nil)
@@ -200,10 +199,4 @@ func sendPostRequest(t *testing.T, app *fiber.App, params types.CreateTaskParams
 	var task *types.Task
 	json.NewDecoder(res.Body).Decode(&task)
 	return task
-}
-
-func checkStatusCode(t *testing.T, expected, actual int) {
-	if actual != expected {
-		t.Fatalf("expected %d status code, but got %d", expected, actual)
-	}
 }
