@@ -15,11 +15,6 @@ type Task struct {
 	Completed   bool      `bson:"completed" json:"completed"`
 }
 
-const (
-	minTitleLen       = 5
-	minDescriptionLen = 5
-)
-
 type CreateTaskParams struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -58,4 +53,8 @@ func (p UpdateTaskParams) ToBSON() bson.M {
 	return bson.M{
 		"completed": p.Completed,
 	}
+}
+
+type AddTaskParams struct {
+	TaskID string `json:"taskID"`
 }

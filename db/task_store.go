@@ -25,6 +25,7 @@ type MongoTaskStore struct {
 	coll   *mongo.Collection
 }
 
+// TODO: review
 func NewMongoTaskStore(client *mongo.Client) *MongoTaskStore {
 	return &MongoTaskStore{
 		client: client,

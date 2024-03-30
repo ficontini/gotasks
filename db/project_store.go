@@ -2,8 +2,10 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ficontini/gotasks/types"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -11,6 +13,7 @@ import (
 const projectColl = "projects"
 
 type ProjectStore interface {
+	GetProjectByID(context.Context, string) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
 }
 
@@ -31,5 +34,19 @@ func (s *MongoProjectStore) InsertProject(ctx context.Context, project *types.Pr
 		return nil, err
 	}
 	project.ID = res.InsertedID.(primitive.ObjectID).Hex()
+	return project, nil
+}
+func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*types.Project, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	var project *types.Project
+	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&project); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrorNotFound
+		}
+		return nil, err
+	}
 	return project, nil
 }
