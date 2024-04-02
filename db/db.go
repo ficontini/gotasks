@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ficontini/gotasks/types"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -22,8 +23,8 @@ type Map map[string]any
 func SetUpdateMap(update Map) Map {
 	return Map{"$set": update}
 }
-func PushToKey(key string, value interface{}) Map {
-	return Map{"$push": Map{key: value}}
+func PushToKey(update Map) Map {
+	return Map{"$push": update}
 }
 func NewMap(key string, value interface{}) Map {
 	return Map{key: value}
@@ -56,10 +57,6 @@ type Store struct {
 	User    UserStore
 	Project ProjectStore
 }
-
-type Deleter interface {
-	Delete(context.Context, string) error
-}
 type Updater interface {
-	Update(context.Context, Map, Map) error
+	Update(context.Context, types.ID, Map) error
 }

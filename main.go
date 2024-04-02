@@ -58,6 +58,13 @@ func main() {
 	apiv1Project.Post("/:id/task", projectHandler.HandleAddTaskToProject)
 	apiv1Project.Get("/:id/task", projectHandler.HandleGetTasks)
 
+	// taskStore, err := db.NewPostgresTaskStore()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// taskHandler := api.NewTaskHandler(taskStore)
+	// apiv1.Post("/", taskHandler.HandlePostTask)
+	// apiv1.Get("/:id", taskHandler.HandleGetTask)
 	log.Fatal(app.Listen(*listenAddr))
 
 }

@@ -3,11 +3,11 @@ package types
 import "fmt"
 
 type Project struct {
-	ID          string   `bson:"_id,omitempty" json:"id,omitempty"`
-	Title       string   `bson:"title" json:"title"`
-	Description string   `bson:"description" json:"description"`
-	UserID      string   `bson:"userID" json:"userID"`
-	Tasks       []string `bson:"tasks" json:"tasks"`
+	ID          ID     `bson:"_id,omitempty" json:"id,omitempty"`
+	Title       string `bson:"title" json:"title"`
+	Description string `bson:"description" json:"description"`
+	UserID      ID     `bson:"userID" json:"userID"`
+	Tasks       []ID   `bson:"tasks" json:"tasks"`
 }
 
 type CreateProjectParams struct {
@@ -19,7 +19,7 @@ func NewProjectFromParams(params CreateProjectParams) *Project {
 	return &Project{
 		Title:       params.Title,
 		Description: params.Description,
-		Tasks:       []string{},
+		Tasks:       []ID{},
 	}
 }
 func (params CreateProjectParams) Validate() map[string]string {
@@ -33,6 +33,12 @@ func (params CreateProjectParams) Validate() map[string]string {
 	return errors
 }
 
-type AddTaskRequest struct {
+type AddTaskParams struct {
 	TaskID string `json:"taskID"`
+}
+
+func (p AddTaskParams) ToMap() map[string]any {
+	return map[string]any{
+		"tasks": ID(p.TaskID),
+	}
 }

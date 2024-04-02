@@ -13,7 +13,7 @@ import (
 const projectColl = "projects"
 
 type ProjectStore interface {
-	GetProjectByID(context.Context, string) (*types.Project, error)
+	GetProjectByID(context.Context, types.ID) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
 	Updater
 }
@@ -34,11 +34,11 @@ func (s *MongoProjectStore) InsertProject(ctx context.Context, project *types.Pr
 	if err != nil {
 		return nil, err
 	}
-	project.ID = res.InsertedID.(primitive.ObjectID).Hex()
+	project.ID = types.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return project, nil
 }
-func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*types.Project, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
+func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id types.ID) (*types.Project, error) {
+	oid, err := id.ObjectID()
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,18 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 	}
 	return project, nil
 }
-func (s *MongoProjectStore) Update(ctx context.Context, filter Map, update Map) error {
-	oid, err := primitive.ObjectIDFromHex(filter["_id"].(string))
+func (s *MongoProjectStore) Update(ctx context.Context, id types.ID, update Map) error {
+	oid, err := id.ObjectID()
 	if err != nil {
 		return err
 	}
-	filter["_id"] = oid
-	_, err = s.coll.UpdateOne(ctx, filter, update)
+	if pushUpdate, ok := update["$push"].(Map); ok {
+		taskID, err := pushUpdate["tasks"].(types.ID).ObjectID()
+		if err != nil {
+			return err
+		}
+		pushUpdate["tasks"] = taskID
+	}
+	_, err = s.coll.UpdateByID(ctx, oid, update)
 	return err
 }

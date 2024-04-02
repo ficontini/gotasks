@@ -46,7 +46,7 @@ func (h *ProjectHandler) HandleGetTasks(c *fiber.Ctx) error {
 	return nil
 }
 func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
-	var params types.AddTaskRequest
+	var params types.AddTaskParams
 	id := c.Params("id")
 	if len(id) == 0 {
 		return ErrBadRequest()
@@ -54,24 +54,25 @@ func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
-	project, err := h.getProjectByID(c.Context(), id)
+	project, err := h.getProjectByID(c.Context(), types.ID(id))
 	if err != nil {
 		return err
 	}
-	task, err := h.getTaskByID(c.Context(), params.TaskID)
+	task, err := h.getTaskByID(c.Context(), types.ID(params.TaskID))
 	if err != nil {
 		return err
 	}
 	//TODO: Check if the task already exists on this project
-	if err := h.addTaskToProject(c.Context(), project.ID, task.ID); err != nil {
+	if err := h.store.Project.Update(c.Context(), project.ID, db.PushToKey(params.ToMap())); err != nil {
 		return err
 	}
-	if err := h.updateTaskProjectID(c.Context(), project.ID, task.ID); err != nil {
+
+	if err := h.store.Task.Update(c.Context(), task.ID, db.PushToKey(db.Map{"projects": project.ID})); err != nil {
 		return err
 	}
-	return c.JSON(map[string]string{"updated": project.ID})
+	return c.JSON(fiber.Map{"updated": project.ID})
 }
-func (h *ProjectHandler) getProjectByID(ctx context.Context, id string) (*types.Project, error) {
+func (h *ProjectHandler) getProjectByID(ctx context.Context, id types.ID) (*types.Project, error) {
 	project, err := h.store.Project.GetProjectByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
@@ -81,7 +82,7 @@ func (h *ProjectHandler) getProjectByID(ctx context.Context, id string) (*types.
 	}
 	return project, nil
 }
-func (h *ProjectHandler) getTaskByID(ctx context.Context, id string) (*types.Task, error) {
+func (h *ProjectHandler) getTaskByID(ctx context.Context, id types.ID) (*types.Task, error) {
 	task, err := h.store.Task.GetTaskByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
@@ -90,17 +91,4 @@ func (h *ProjectHandler) getTaskByID(ctx context.Context, id string) (*types.Tas
 		return nil, err
 	}
 	return task, nil
-}
-func (h *ProjectHandler) addTaskToProject(ctx context.Context, projectID, taskID string) error {
-	filter := db.NewMap("_id", projectID)
-	update := db.PushToKey("tasks", taskID)
-	if err := h.store.Project.Update(ctx, filter, update); err != nil {
-		return err
-	}
-	return nil
-}
-func (h *ProjectHandler) updateTaskProjectID(ctx context.Context, projectID, taskID string) error {
-	filter := db.NewMap("_id", taskID)
-	update := db.PushToKey("projects", projectID)
-	return h.store.Task.Update(ctx, filter, update)
 }

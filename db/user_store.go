@@ -13,7 +13,7 @@ import (
 const userColl = "users"
 
 type UserStore interface {
-	GetUserByID(context.Context, string) (*types.User, error)
+	GetUserByID(context.Context, types.ID) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
 }
@@ -40,8 +40,8 @@ func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*typ
 	}
 	return user, nil
 }
-func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.User, error) {
-	oid, err := primitive.ObjectIDFromHex(id)
+func (s *MongoUserStore) GetUserByID(ctx context.Context, id types.ID) (*types.User, error) {
+	oid, err := id.ObjectID()
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +59,6 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*typ
 	if err != nil {
 		return nil, err
 	}
-	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
+	user.ID = types.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return user, nil
 }

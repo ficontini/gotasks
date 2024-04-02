@@ -21,7 +21,7 @@ func NewTaskHandler(taskStore db.TaskStore) *TaskHandler {
 }
 func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	task, err := h.taskStore.GetTaskByID(c.Context(), id)
+	task, err := h.taskStore.GetTaskByID(c.Context(), types.ID(id))
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
@@ -82,33 +82,32 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	if completed {
 		return ErrBadRequestCustomMessage("task already completed")
 	}
-	filter := db.NewMap("_id", id)
 	params := types.UpdateTaskParams{
 		Completed: true,
 	}
 	update := db.SetUpdateMap(params.ToMap())
-	if err = h.taskStore.Update(c.Context(), filter, update); err != nil {
+	if err = h.taskStore.Update(c.Context(), types.ID(id), update); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}
 		return err
 	}
-	return c.JSON(map[string]string{"updated": id})
+	return c.JSON(fiber.Map{"updated": id})
 
 }
 func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.taskStore.Delete(c.Context(), id); err != nil {
+	if err := h.taskStore.Delete(c.Context(), types.ID(id)); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}
 		return err
 	}
-	return c.JSON(map[string]string{"deleted": id})
+	return c.JSON(fiber.Map{"deleted": id})
 }
 
 func (h *TaskHandler) isTaskCompleted(ctx context.Context, id string) (bool, error) {
-	task, err := h.taskStore.GetTaskByID(ctx, id)
+	task, err := h.taskStore.GetTaskByID(ctx, types.ID(id))
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return false, ErrResourceNotFound("task")
