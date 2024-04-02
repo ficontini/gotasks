@@ -82,11 +82,12 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	if completed {
 		return ErrBadRequestCustomMessage("task already completed")
 	}
-	filter := db.Map{"_id": id}
+	filter := db.NewMap("_id", id)
 	params := types.UpdateTaskParams{
 		Completed: true,
 	}
-	if err = h.taskStore.UpdateTask(c.Context(), filter, params); err != nil {
+	update := db.SetUpdateMap(params.ToMap())
+	if err = h.taskStore.Update(c.Context(), filter, update); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}
@@ -97,7 +98,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 }
 func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.taskStore.DeleteTask(c.Context(), id); err != nil {
+	if err := h.taskStore.Delete(c.Context(), id); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}

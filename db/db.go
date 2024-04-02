@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +18,16 @@ const (
 var ErrorNotFound = errors.New("resource not found")
 
 type Map map[string]any
+
+func SetUpdateMap(update Map) Map {
+	return Map{"$set": update}
+}
+func PushToKey(key string, value interface{}) Map {
+	return Map{"$push": Map{key: value}}
+}
+func NewMap(key string, value interface{}) Map {
+	return Map{key: value}
+}
 
 type Pagination struct {
 	Page  int64
@@ -44,4 +55,11 @@ type Store struct {
 	Task    TaskStore
 	User    UserStore
 	Project ProjectStore
+}
+
+type Deleter interface {
+	Delete(context.Context, string) error
+}
+type Updater interface {
+	Update(context.Context, Map, Map) error
 }

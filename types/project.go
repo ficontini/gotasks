@@ -19,6 +19,7 @@ func NewProjectFromParams(params CreateProjectParams) *Project {
 	return &Project{
 		Title:       params.Title,
 		Description: params.Description,
+		Tasks:       []string{},
 	}
 }
 func (params CreateProjectParams) Validate() map[string]string {
@@ -30,4 +31,8 @@ func (params CreateProjectParams) Validate() map[string]string {
 		errors["description"] = fmt.Sprintf("Description length should be at least %d", minDescriptionLen)
 	}
 	return errors
+}
+
+type AddTaskRequest struct {
+	TaskID string `json:"taskID"`
 }

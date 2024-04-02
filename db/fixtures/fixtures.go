@@ -16,6 +16,7 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 		Description: description,
 		DueDate:     dueTo,
 		Completed:   completed,
+		Projects:    []string{},
 	}
 	insertedTask, err := store.Task.InsertTask(context.Background(), task)
 	if err != nil {

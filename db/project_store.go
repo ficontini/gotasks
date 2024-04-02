@@ -15,6 +15,7 @@ const projectColl = "projects"
 type ProjectStore interface {
 	GetProjectByID(context.Context, string) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
+	Updater
 }
 
 type MongoProjectStore struct {
@@ -49,4 +50,13 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 		return nil, err
 	}
 	return project, nil
+}
+func (s *MongoProjectStore) Update(ctx context.Context, filter Map, update Map) error {
+	oid, err := primitive.ObjectIDFromHex(filter["_id"].(string))
+	if err != nil {
+		return err
+	}
+	filter["_id"] = oid
+	_, err = s.coll.UpdateOne(ctx, filter, update)
+	return err
 }

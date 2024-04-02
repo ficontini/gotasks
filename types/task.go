@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Task struct {
@@ -13,6 +11,7 @@ type Task struct {
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
 	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" json:"completed"`
+	Projects    []string  `bson:"projects" json:"projects,omitempty"`
 }
 
 type CreateTaskParams struct {
@@ -26,6 +25,7 @@ func NewTaskFromParams(params CreateTaskParams) *Task {
 		Title:       params.Title,
 		Description: params.Description,
 		DueDate:     params.DueDate,
+		Projects:    []string{},
 	}
 }
 func (params CreateTaskParams) Validate() map[string]string {
@@ -49,12 +49,8 @@ type UpdateTaskParams struct {
 	Completed bool
 }
 
-func (p UpdateTaskParams) ToBSON() bson.M {
-	return bson.M{
+func (p UpdateTaskParams) ToMap() map[string]any {
+	return map[string]any{
 		"completed": p.Completed,
 	}
-}
-
-type AddTaskParams struct {
-	TaskID string `json:"taskID"`
 }

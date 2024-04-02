@@ -16,8 +16,8 @@ type TaskStore interface {
 	GetTaskByID(context.Context, string) (*types.Task, error)
 	GetTasks(context.Context, Map, *Pagination) ([]*types.Task, error)
 	InsertTask(context.Context, *types.Task) (*types.Task, error)
-	UpdateTask(context.Context, Map, types.UpdateTaskParams) error
-	DeleteTask(context.Context, string) error
+	Updater
+	Deleter
 }
 
 type MongoTaskStore struct {
@@ -40,13 +40,13 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *types.Task) (*typ
 	task.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return task, nil
 }
-func (s *MongoTaskStore) UpdateTask(ctx context.Context, filter Map, params types.UpdateTaskParams) error {
+func (s *MongoTaskStore) Update(ctx context.Context, filter Map, update Map) error {
 	oid, err := primitive.ObjectIDFromHex(filter["_id"].(string))
 	if err != nil {
 		return err
 	}
 	filter["_id"] = oid
-	res, err := s.coll.UpdateOne(ctx, filter, bson.M{"$set": params.ToBSON()})
+	res, err := s.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (s *MongoTaskStore) UpdateTask(ctx context.Context, filter Map, params type
 	}
 	return nil
 }
-func (s *MongoTaskStore) DeleteTask(ctx context.Context, id string) error {
+func (s *MongoTaskStore) Delete(ctx context.Context, id string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
