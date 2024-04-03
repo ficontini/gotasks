@@ -17,7 +17,7 @@ type UserStore interface {
 	GetUserByID(context.Context, data.ID) (*data.User, error)
 	GetUserByEmail(context.Context, string) (*data.User, error)
 	InsertUser(context.Context, *data.User) (*data.User, error)
-	EnableUser(context.Context, data.ID) error
+	Update(context.Context, data.ID, Map) error
 }
 
 type MongoUserStore struct {
@@ -64,12 +64,12 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *data.User) (*data
 	user.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return user, nil
 }
-func (s *MongoUserStore) EnableUser(ctx context.Context, id data.ID) error {
+func (s *MongoUserStore) Update(ctx context.Context, id data.ID, params Map) error {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return err
 	}
-	update := bson.M{"$set": bson.M{"enabled": true}}
+	update := bson.M{"$set": params}
 	res, err := s.coll.UpdateByID(ctx, oid, update)
 	if err != nil {
 		return err

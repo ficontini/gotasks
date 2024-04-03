@@ -46,7 +46,7 @@ func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	if err := h.userStore.EnableUser(c.Context(), data.ID(id)); err != nil {
+	if err := h.userStore.Update(c.Context(), data.ID(id), db.Map{"enabled": true}); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("user")
 		}
