@@ -10,6 +10,19 @@ import (
 	"github.com/ficontini/gotasks/types"
 )
 
+func AddProject(store *db.Store, title, description string, userID types.ID, tasks []types.ID) *types.Project {
+	project := &types.Project{
+		Title:       title,
+		Description: description,
+		UserID:      userID,
+		Tasks:       tasks,
+	}
+	insertedProject, err := store.Project.InsertProject(context.Background(), project)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return insertedProject
+}
 func AddTask(store *db.Store, title, description string, dueTo time.Time, completed bool) *types.Task {
 	task := &types.Task{
 		Title:       title,

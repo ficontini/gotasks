@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/ficontini/gotasks/db"
@@ -42,14 +43,23 @@ func (h *ProjectHandler) HandlePostProject(c *fiber.Ctx) error {
 
 }
 func (h *ProjectHandler) HandleGetTasks(c *fiber.Ctx) error {
-
-	return nil
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	pagination := &db.Pagination{}
+	tasks, err := h.store.Task.GetTasksByProject(c.Context(), types.ID(id), pagination)
+	if err != nil {
+		return err
+	}
+	resp := NewResourceResponse(tasks, len(tasks), pagination.Page)
+	return c.JSON(resp)
 }
 func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	var params types.AddTaskParams
 	id := c.Params("id")
 	if len(id) == 0 {
-		return ErrBadRequest()
+		return ErrInvalidID()
 	}
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
@@ -62,12 +72,13 @@ func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	//TODO: Check if the task already exists on this project
-	if err := h.store.Project.Update(c.Context(), project.ID, db.PushToKey(params.ToMap())); err != nil {
+	if project.ContainsTask(task.ID) {
+		return ErrBadRequestCustomMessage(fmt.Sprintf("task %s is already associated with this project", task.ID))
+	}
+	if err := h.store.Project.UpdateProjectTasks(c.Context(), project.ID, task.ID); err != nil {
 		return err
 	}
-
-	if err := h.store.Task.Update(c.Context(), task.ID, db.PushToKey(db.Map{"projects": project.ID})); err != nil {
+	if err := h.store.Task.UpdateTaskProjects(c.Context(), task.ID, project.ID); err != nil {
 		return err
 	}
 	return c.JSON(fiber.Map{"updated": project.ID})

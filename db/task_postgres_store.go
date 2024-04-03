@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/ficontini/gotasks/types"
 	"github.com/lib/pq"
@@ -71,12 +72,44 @@ func (s *PostgresTaskStore) GetTaskByID(ctx context.Context, id types.ID) (*type
 	return &task, nil
 }
 func (s *PostgresTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
-	return nil, nil
+	var tasks []*types.Task
+	query := fmt.Sprintf("SELECT * FROM tasks ORDER BY id %s", pagination.getQuery())
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		task, err := scanIntoTask(rows)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 func (s *PostgresTaskStore) Delete(ctx context.Context, id types.ID) error {
-	return nil
+	_, err := s.db.Exec("delete from tasks where id=$1", id)
+	return err
 }
 
+// task/:id/complete
 func (s *PostgresTaskStore) Update(ctx context.Context, id types.ID, update Map) error {
+
 	return nil
+}
+func scanIntoTask(rows *sql.Rows) (*types.Task, error) {
+	var task types.Task
+	err := rows.Scan(
+		&task.ID,
+		&task.Title,
+		&task.Description,
+		&task.DueDate,
+		&task.Completed,
+		pq.Array(&task.Projects))
+	return &task, err
+
 }

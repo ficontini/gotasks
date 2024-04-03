@@ -15,7 +15,7 @@ const projectColl = "projects"
 type ProjectStore interface {
 	GetProjectByID(context.Context, types.ID) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
-	Updater
+	UpdateProjectTasks(context.Context, types.ID, types.ID) error
 }
 
 type MongoProjectStore struct {
@@ -51,18 +51,16 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id types.ID) (*t
 	}
 	return project, nil
 }
-func (s *MongoProjectStore) Update(ctx context.Context, id types.ID, update Map) error {
+func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, id types.ID, taskID types.ID) error {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return err
 	}
-	if pushUpdate, ok := update["$push"].(Map); ok {
-		taskID, err := pushUpdate["tasks"].(types.ID).ObjectID()
-		if err != nil {
-			return err
-		}
-		pushUpdate["tasks"] = taskID
+	otaskID, err := taskID.ObjectID()
+	if err != nil {
+		return err
 	}
+	update := bson.M{"$push": bson.M{"tasks": otaskID}}
 	_, err = s.coll.UpdateByID(ctx, oid, update)
 	return err
 }

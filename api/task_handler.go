@@ -85,8 +85,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	params := types.UpdateTaskParams{
 		Completed: true,
 	}
-	update := db.SetUpdateMap(params.ToMap())
-	if err = h.taskStore.Update(c.Context(), types.ID(id), update); err != nil {
+	if err = h.taskStore.Update(c.Context(), types.ID(id), params); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}

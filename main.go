@@ -58,6 +58,8 @@ func main() {
 	apiv1Project.Post("/:id/task", projectHandler.HandleAddTaskToProject)
 	apiv1Project.Get("/:id/task", projectHandler.HandleGetTasks)
 
+	// app := fiber.New(config)
+	// apiv1 := app.Group("/api/v1/task")
 	// taskStore, err := db.NewPostgresTaskStore()
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -65,6 +67,8 @@ func main() {
 	// taskHandler := api.NewTaskHandler(taskStore)
 	// apiv1.Post("/", taskHandler.HandlePostTask)
 	// apiv1.Get("/:id", taskHandler.HandleGetTask)
+	// apiv1.Delete("/:id", taskHandler.HandleDeleteTask)
+	// apiv1.Get("/", taskHandler.HandleGetTasks)
 	log.Fatal(app.Listen(*listenAddr))
 
 }

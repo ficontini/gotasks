@@ -1,10 +1,9 @@
 package db
 
 import (
-	"context"
 	"errors"
+	"fmt"
 
-	"github.com/ficontini/gotasks/types"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -20,23 +19,13 @@ var ErrorNotFound = errors.New("resource not found")
 
 type Map map[string]any
 
-func SetUpdateMap(update Map) Map {
-	return Map{"$set": update}
-}
-func PushToKey(update Map) Map {
-	return Map{"$push": update}
-}
-func NewMap(key string, value interface{}) Map {
-	return Map{key: value}
-}
-
 type Pagination struct {
 	Page  int64
 	Limit int64
 }
 
 // TODO: Review
-func (p *Pagination) CheckDefaultPaginationValues() {
+func (p *Pagination) SetDefaults() {
 	if p.Limit <= 0 {
 		p.Limit = DEFAULT_LIMIT
 	}
@@ -45,18 +34,20 @@ func (p *Pagination) CheckDefaultPaginationValues() {
 	}
 }
 func (p *Pagination) getOptions() *options.FindOptions {
-	p.CheckDefaultPaginationValues()
+	p.SetDefaults()
 	opts := &options.FindOptions{}
 	opts.SetSkip((p.Page - 1) * p.Limit)
 	opts.SetLimit(p.Limit)
 	return opts
+}
+func (p *Pagination) getQuery() string {
+	p.SetDefaults()
+	offset := (p.Page - 1) * p.Limit
+	return fmt.Sprintf("LIMIT %d OFFSET %d", p.Limit, offset)
 }
 
 type Store struct {
 	Task    TaskStore
 	User    UserStore
 	Project ProjectStore
-}
-type Updater interface {
-	Update(context.Context, types.ID, Map) error
 }

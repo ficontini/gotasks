@@ -30,17 +30,22 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *types.Task) (*typ
 	task.ID = types.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return task, nil
 }
-func (s *MongoTaskStore) Update(ctx context.Context, id types.ID, update Map) error {
-	oid, err := id.ObjectID()
+func (s *MongoTaskStore) Update(ctx context.Context, id types.ID, params types.UpdateTaskParams) error {
+	update := bson.M{"$set": params.ToMap()}
+	return s.update(ctx, id, update)
+}
+func (s *MongoTaskStore) UpdateTaskProjects(ctx context.Context, id types.ID, projectID types.ID) error {
+	oprojectID, err := projectID.ObjectID()
 	if err != nil {
 		return err
 	}
-	if pushUpdate, ok := update["$push"].(Map); ok {
-		projectID, err := pushUpdate["projects"].(types.ID).ObjectID()
-		if err != nil {
-			return err
-		}
-		pushUpdate["projects"] = projectID
+	update := bson.M{"$push": bson.M{"projects": oprojectID}}
+	return s.update(ctx, id, update)
+}
+func (s *MongoTaskStore) update(ctx context.Context, id types.ID, update bson.M) error {
+	oid, err := id.ObjectID()
+	if err != nil {
+		return err
 	}
 	res, err := s.coll.UpdateByID(ctx, oid, update)
 	if err != nil {
@@ -80,6 +85,16 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id types.ID) (*types.T
 	return task, nil
 }
 func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
+	return s.getTasks(ctx, filter, pagination)
+}
+func (s *MongoTaskStore) GetTasksByProject(ctx context.Context, id types.ID, pagination *Pagination) ([]*types.Task, error) {
+	oid, err := id.ObjectID()
+	if err != nil {
+		return nil, err
+	}
+	return s.getTasks(ctx, Map{"projects": oid}, pagination)
+}
+func (s *MongoTaskStore) getTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
 	opts := pagination.getOptions()
 	cur, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {

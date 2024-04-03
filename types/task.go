@@ -11,7 +11,7 @@ type Task struct {
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
 	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" json:"completed"`
-	Projects    []ID      `bson:"projects" json:"projects,omitempty"`
+	Projects    []ID      `bson:"projects" json:"-"`
 }
 
 type CreateTaskParams struct {

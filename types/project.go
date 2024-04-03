@@ -10,6 +10,15 @@ type Project struct {
 	Tasks       []ID   `bson:"tasks" json:"tasks"`
 }
 
+func (project *Project) ContainsTask(taskID ID) bool {
+	for _, id := range project.Tasks {
+		if id == taskID {
+			return true
+		}
+	}
+	return false
+}
+
 type CreateProjectParams struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
