@@ -1,4 +1,4 @@
-package types
+package data
 
 import (
 	"fmt"
@@ -21,6 +21,7 @@ type User struct {
 	Email             string `bson:"email" json:"email"`
 	EncryptedPassword string `bson:"encryptedPassword" json:"-"`
 	IsAdmin           bool   `bson:"isAdmin" json:"-"`
+	Enabled           bool   `bson:"enabled" json:"-"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {

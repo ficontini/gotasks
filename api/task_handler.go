@@ -5,8 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
-	"github.com/ficontini/gotasks/types"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,7 +22,7 @@ func NewTaskHandler(taskStore db.TaskStore) *TaskHandler {
 }
 func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	task, err := h.taskStore.GetTaskByID(c.Context(), types.ID(id))
+	task, err := h.taskStore.GetTaskByID(c.Context(), data.ID(id))
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
@@ -58,14 +59,14 @@ func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) HandlePostTask(c *fiber.Ctx) error {
-	var params types.CreateTaskParams
+	var params data.CreateTaskParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	task := types.NewTaskFromParams(params)
+	task := data.NewTaskFromParams(params)
 	insertedTask, err := h.taskStore.InsertTask(c.Context(), task)
 	if err != nil {
 		return err
@@ -82,10 +83,10 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	if completed {
 		return ErrBadRequestCustomMessage("task already completed")
 	}
-	params := types.UpdateTaskParams{
+	params := data.UpdateTaskParams{
 		Completed: true,
 	}
-	if err = h.taskStore.Update(c.Context(), types.ID(id), params); err != nil {
+	if err = h.taskStore.Update(c.Context(), data.ID(id), params); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}
@@ -96,7 +97,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 }
 func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.taskStore.Delete(c.Context(), types.ID(id)); err != nil {
+	if err := h.taskStore.Delete(c.Context(), data.ID(id)); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("task")
 		}
@@ -106,7 +107,7 @@ func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) isTaskCompleted(ctx context.Context, id string) (bool, error) {
-	task, err := h.taskStore.GetTaskByID(ctx, types.ID(id))
+	task, err := h.taskStore.GetTaskByID(ctx, data.ID(id))
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return false, ErrResourceNotFound("task")

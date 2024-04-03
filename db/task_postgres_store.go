@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ficontini/gotasks/types"
+	"github.com/ficontini/gotasks/data"
+
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 type PostgresTaskStore struct {
@@ -28,7 +28,7 @@ func NewPostgresTaskStore() (*PostgresTaskStore, error) {
 	}, nil
 }
 
-func (s *PostgresTaskStore) InsertTask(ctx context.Context, task *types.Task) (*types.Task, error) {
+func (s *PostgresTaskStore) InsertTask(ctx context.Context, task *data.Task) (*data.Task, error) {
 	query := `INSERT INTO tasks 
 	(title, description, due_date, completed, projects)
 	VALUES($1, $2, $3, $4, $5)
@@ -45,7 +45,7 @@ func (s *PostgresTaskStore) InsertTask(ctx context.Context, task *types.Task) (*
 	}
 	return task, nil
 }
-func (s *PostgresTaskStore) GetTaskByID(ctx context.Context, id types.ID) (*types.Task, error) {
+func (s *PostgresTaskStore) GetTaskByID(ctx context.Context, id data.ID) (*data.Task, error) {
 	intId, err := id.Int()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *PostgresTaskStore) GetTaskByID(ctx context.Context, id types.ID) (*type
 	SELECT * 
 	FROM tasks
 	WHERE id = $1`
-	var task types.Task
+	var task data.Task
 	err = s.db.QueryRowContext(ctx, query, intId).Scan(
 		&task.ID,
 		&task.Title,
@@ -71,8 +71,8 @@ func (s *PostgresTaskStore) GetTaskByID(ctx context.Context, id types.ID) (*type
 	}
 	return &task, nil
 }
-func (s *PostgresTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*types.Task, error) {
-	var tasks []*types.Task
+func (s *PostgresTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*data.Task, error) {
+	var tasks []*data.Task
 	query := fmt.Sprintf("SELECT * FROM tasks ORDER BY id %s", pagination.getQuery())
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
@@ -91,18 +91,18 @@ func (s *PostgresTaskStore) GetTasks(ctx context.Context, filter Map, pagination
 	}
 	return tasks, nil
 }
-func (s *PostgresTaskStore) Delete(ctx context.Context, id types.ID) error {
+func (s *PostgresTaskStore) Delete(ctx context.Context, id data.ID) error {
 	_, err := s.db.Exec("delete from tasks where id=$1", id)
 	return err
 }
 
 // task/:id/complete
-func (s *PostgresTaskStore) Update(ctx context.Context, id types.ID, update Map) error {
+func (s *PostgresTaskStore) Update(ctx context.Context, id data.ID, update Map) error {
 
 	return nil
 }
-func scanIntoTask(rows *sql.Rows) (*types.Task, error) {
-	var task types.Task
+func scanIntoTask(rows *sql.Rows) (*data.Task, error) {
+	var task data.Task
 	err := rows.Scan(
 		&task.ID,
 		&task.Title,

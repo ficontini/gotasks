@@ -1,9 +1,11 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/ficontini/gotasks/data"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -33,21 +35,29 @@ func (p *Pagination) SetDefaults() {
 		p.Page = DEFAULT_PAGE
 	}
 }
-func (p *Pagination) getOptions() *options.FindOptions {
+func (p *Pagination) generatePagination() (skip int64, limit int64) {
 	p.SetDefaults()
+	skip = (p.Page - 1) * p.Limit
+	limit = p.Limit
+	return skip, limit
+}
+func (p *Pagination) getOptions() *options.FindOptions {
+	skip, limit := p.generatePagination()
 	opts := &options.FindOptions{}
-	opts.SetSkip((p.Page - 1) * p.Limit)
-	opts.SetLimit(p.Limit)
+	opts.SetSkip(skip)
+	opts.SetLimit(limit)
 	return opts
 }
 func (p *Pagination) getQuery() string {
-	p.SetDefaults()
-	offset := (p.Page - 1) * p.Limit
-	return fmt.Sprintf("LIMIT %d OFFSET %d", p.Limit, offset)
+	skip, limit := p.generatePagination()
+	return fmt.Sprintf("LIMIT %d OFFSET %d", limit, skip)
 }
 
 type Store struct {
 	Task    TaskStore
 	User    UserStore
 	Project ProjectStore
+}
+type Deleter interface {
+	Delete(context.Context, data.ID) error
 }

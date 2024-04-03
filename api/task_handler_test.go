@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db/fixtures"
-	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,7 +24,7 @@ func TestPostTaskSuccess(t *testing.T) {
 
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
+	params := data.CreateTaskParams{
 		Title:       "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
@@ -51,7 +51,7 @@ func TestPostTaskWithWrongDueDate(t *testing.T) {
 	taskHandler := NewTaskHandler(db.Task)
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
+	params := data.CreateTaskParams{
 		Title:       "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(-1, 0, 5),
@@ -69,7 +69,7 @@ func TestPostInvalidTitle(t *testing.T) {
 	taskHandler := NewTaskHandler(db.Task)
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
+	params := data.CreateTaskParams{
 		Title:       "aa",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
@@ -164,7 +164,7 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var updatedTask *types.Task
+	var updatedTask *data.Task
 	json.NewDecoder(res.Body).Decode(&updatedTask)
 	if !updatedTask.Completed {
 		t.Fatalf("task wiht %s expected complete", updatedTask.ID)
@@ -187,7 +187,7 @@ func TestCompleteTaskWithCompletedStatus(t *testing.T) {
 	}
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
-func sendPostRequest(t *testing.T, app *fiber.App, params types.CreateTaskParams, expectedStatus int) *types.Task {
+func sendPostRequest(t *testing.T, app *fiber.App, params data.CreateTaskParams, expectedStatus int) *data.Task {
 	b, _ := json.Marshal(params)
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(b))
 	req.Header.Add("Content-Type", "application/json")
@@ -196,7 +196,7 @@ func sendPostRequest(t *testing.T, app *fiber.App, params types.CreateTaskParams
 		t.Fatal(err)
 	}
 	checkStatusCode(t, expectedStatus, res.StatusCode)
-	var task *types.Task
+	var task *data.Task
 	json.NewDecoder(res.Body).Decode(&task)
 	return task
 }

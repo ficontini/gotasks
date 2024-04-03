@@ -3,24 +3,24 @@ package db
 import (
 	"context"
 
-	"github.com/ficontini/gotasks/types"
+	"github.com/ficontini/gotasks/data"
 )
 
 const taskColl = "tasks"
 
 type TaskStore interface {
-	InsertTask(context.Context, *types.Task) (*types.Task, error)
+	InsertTask(context.Context, *data.Task) (*data.Task, error)
 	TaskUpdater
 	TaskGetter
-	Delete(context.Context, types.ID) error
+	Deleter
 }
 
 type TaskUpdater interface {
-	Update(context.Context, types.ID, types.UpdateTaskParams) error
-	UpdateTaskProjects(context.Context, types.ID, types.ID) error
+	Update(context.Context, data.ID, data.UpdateTaskParams) error
+	UpdateTaskProjects(context.Context, data.ID, data.ID) error
 }
 type TaskGetter interface {
-	GetTasks(context.Context, Map, *Pagination) ([]*types.Task, error)
-	GetTasksByProject(context.Context, types.ID, *Pagination) ([]*types.Task, error)
-	GetTaskByID(context.Context, types.ID) (*types.Task, error)
+	GetTasks(context.Context, Map, *Pagination) ([]*data.Task, error)
+	GetTasksByProject(context.Context, data.ID, *Pagination) ([]*data.Task, error)
+	GetTaskByID(context.Context, data.ID) (*data.Task, error)
 }

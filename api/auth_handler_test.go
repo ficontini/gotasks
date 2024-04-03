@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db/fixtures"
-	"github.com/ficontini/gotasks/types"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,10 +20,10 @@ func TestAuthenticateSuccess(t *testing.T) {
 
 	var (
 		password    = "supersecurepassword"
-		user        = fixtures.AddUser(db.Store, "james", "foo", password)
+		user        = fixtures.AddUser(db.Store, "james", "foo", password, false)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		authHandler = NewAuthHandler(db.User)
-		params      = types.AuthParams{
+		params      = data.AuthParams{
 			Email:    user.Email,
 			Password: password,
 		}
@@ -36,7 +37,7 @@ func TestAuthenticateSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkStatusCode(t, http.StatusOK, resp.StatusCode)
-	var authresp types.AuthResponse
+	var authresp data.AuthResponse
 	if err := json.NewDecoder(resp.Body).Decode(&authresp); err != nil {
 		log.Fatal(err)
 	}
@@ -50,10 +51,10 @@ func TestAuthenticateWrongWithPasswordFailure(t *testing.T) {
 	defer db.teardown(t)
 
 	var (
-		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword")
+		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword", false)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		authHandler = NewAuthHandler(db.User)
-		params      = types.AuthParams{
+		params      = data.AuthParams{
 			Email:    user.Email,
 			Password: "wrongpassword",
 		}

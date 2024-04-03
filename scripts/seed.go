@@ -33,6 +33,7 @@ func main() {
 		description := fmt.Sprintf("description of task%d", i)
 		fixtures.AddTask(store, title, description, time.Now().AddDate(0, 0, rand.Intn(10)), rand.Intn(2) == 0)
 	}
-	fixtures.AddUser(store, "james", "foobaz", "supersecurepassword")
+	fixtures.AddUser(store, "james", "foobaz", "supersecurepassword", false)
+	fixtures.AddUser(store, "admin", "foobaz", "supersecurepassword", true)
 	fmt.Println("seeding the database")
 }

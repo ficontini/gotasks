@@ -7,8 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
-	"github.com/ficontini/gotasks/types"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -24,7 +25,7 @@ func NewAuthHandler(userStore db.UserStore) *AuthHandler {
 }
 
 func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
-	var params types.AuthParams
+	var params data.AuthParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
@@ -41,15 +42,18 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 	if !user.IsPasswordValid(params.Password) {
 		return ErrInvalidCredentials()
 	}
+	if !user.Enabled {
+		return ErrForbidden()
+	}
 	fmt.Println("authenticated -> ", user)
 	token := CreateTokenFromUser(user)
-	resp := types.AuthResponse{
+	resp := data.AuthResponse{
 		Token: token,
 	}
 	return c.JSON(resp)
 }
 
-func CreateTokenFromUser(user *types.User) string {
+func CreateTokenFromUser(user *data.User) string {
 	claims := jwt.MapClaims{
 		"id":  user.ID,
 		"exp": time.Now().Add(time.Hour * 4).Unix(),

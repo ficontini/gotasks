@@ -47,6 +47,9 @@ func ErrUnAuthorized() Error {
 func ErrInvalidCredentials() Error {
 	return NewError(http.StatusUnauthorized, "invalid credentials")
 }
+func ErrForbidden() Error {
+	return NewError(http.StatusForbidden, "user account is not enabled. Please contact the administrator for assistance.")
+}
 func ErrInternalServer() Error {
 	return NewError(http.StatusInternalServerError, "internal server error")
 }

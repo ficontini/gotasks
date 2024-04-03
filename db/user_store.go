@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/types"
+	"github.com/ficontini/gotasks/data"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,9 +14,10 @@ import (
 const userColl = "users"
 
 type UserStore interface {
-	GetUserByID(context.Context, types.ID) (*types.User, error)
-	GetUserByEmail(context.Context, string) (*types.User, error)
-	InsertUser(context.Context, *types.User) (*types.User, error)
+	GetUserByID(context.Context, data.ID) (*data.User, error)
+	GetUserByEmail(context.Context, string) (*data.User, error)
+	InsertUser(context.Context, *data.User) (*data.User, error)
+	EnableUser(context.Context, data.ID) error
 }
 
 type MongoUserStore struct {
@@ -30,8 +32,8 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 	}
 }
 
-func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
-	var user *types.User
+func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*data.User, error) {
+	var user *data.User
 	if err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -40,12 +42,12 @@ func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*typ
 	}
 	return user, nil
 }
-func (s *MongoUserStore) GetUserByID(ctx context.Context, id types.ID) (*types.User, error) {
+func (s *MongoUserStore) GetUserByID(ctx context.Context, id data.ID) (*data.User, error) {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return nil, err
 	}
-	var user *types.User
+	var user *data.User
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -54,11 +56,26 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id types.ID) (*types.U
 	}
 	return user, nil
 }
-func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
+func (s *MongoUserStore) InsertUser(ctx context.Context, user *data.User) (*data.User, error) {
 	res, err := s.coll.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	user.ID = types.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
+	user.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return user, nil
+}
+func (s *MongoUserStore) EnableUser(ctx context.Context, id data.ID) error {
+	oid, err := id.ObjectID()
+	if err != nil {
+		return err
+	}
+	update := bson.M{"$set": bson.M{"enabled": true}}
+	res, err := s.coll.UpdateByID(ctx, oid, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrorNotFound
+	}
+	return nil
 }

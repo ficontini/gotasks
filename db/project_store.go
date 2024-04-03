@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/types"
+	"github.com/ficontini/gotasks/data"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,9 +13,9 @@ import (
 const projectColl = "projects"
 
 type ProjectStore interface {
-	GetProjectByID(context.Context, types.ID) (*types.Project, error)
-	InsertProject(context.Context, *types.Project) (*types.Project, error)
-	UpdateProjectTasks(context.Context, types.ID, types.ID) error
+	GetProjectByID(context.Context, data.ID) (*data.Project, error)
+	InsertProject(context.Context, *data.Project) (*data.Project, error)
+	UpdateProjectTasks(context.Context, data.ID, data.ID) error
 }
 
 type MongoProjectStore struct {
@@ -29,20 +29,20 @@ func NewMongoProjectStore(client *mongo.Client) *MongoProjectStore {
 		coll:   client.Database(DBNAME).Collection(projectColl),
 	}
 }
-func (s *MongoProjectStore) InsertProject(ctx context.Context, project *types.Project) (*types.Project, error) {
+func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Project) (*data.Project, error) {
 	res, err := s.coll.InsertOne(ctx, project)
 	if err != nil {
 		return nil, err
 	}
-	project.ID = types.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
+	project.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return project, nil
 }
-func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id types.ID) (*types.Project, error) {
+func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id data.ID) (*data.Project, error) {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return nil, err
 	}
-	var project *types.Project
+	var project *data.Project
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&project); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -51,7 +51,7 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id types.ID) (*t
 	}
 	return project, nil
 }
-func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, id types.ID, taskID types.ID) error {
+func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, id data.ID, taskID data.ID) error {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return err

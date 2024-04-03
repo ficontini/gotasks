@@ -30,8 +30,9 @@ func setup(t *testing.T) *testdb {
 	return &testdb{
 		client: client,
 		Store: &db.Store{
-			Task: db.NewMongoTaskStore(client),
-			User: db.NewMongoUserStore(client),
+			Task:    db.NewMongoTaskStore(client),
+			User:    db.NewMongoUserStore(client),
+			Project: db.NewMongoProjectStore(client),
 		},
 	}
 }

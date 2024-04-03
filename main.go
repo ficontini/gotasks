@@ -12,9 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var config = fiber.Config{
-	ErrorHandler: api.ErrorHandler,
-}
+var (
+	config = fiber.Config{
+		ErrorHandler: api.ErrorHandler,
+	}
+)
 
 func main() {
 	listenAddr := flag.String("listenAddr", ":3000", "The listen address of the API server")
@@ -39,36 +41,27 @@ func main() {
 		authHandler    = api.NewAuthHandler(userStore)
 		projectHandler = api.NewProjectHandler(&store)
 		app            = fiber.New(config)
-		apiv1          = app.Group("/api/v1")
-		apiv1Task      = apiv1.Group("/task", api.JWTAuthentication(userStore))
-		apiv1Project   = apiv1.Group("/project", api.JWTAuthentication(userStore))
+		auth           = app.Group("/api")
+		apiv1          = app.Group("/api/v1", api.JWTAuthentication(userStore))
+		admin          = apiv1.Group("/admin", api.AdminAuth)
 	)
 
-	apiv1.Post("/auth", authHandler.HandleAuthenticate)
-	apiv1.Post("/user", userHandler.HandlePostUser)
+	auth.Post("/auth", authHandler.HandleAuthenticate)
+	auth.Post("/user", userHandler.HandlePostUser)
 
-	//TODO: review groups
-	apiv1Task.Get("/", taskHandler.HandleGetTasks)
-	apiv1Task.Post("/", taskHandler.HandlePostTask)
-	apiv1Task.Get("/:id", taskHandler.HandleGetTask)
-	apiv1Task.Post("/:id/complete", taskHandler.HandleCompleteTask)
-	apiv1Task.Delete("/:id", taskHandler.HandleDeleteTask)
+	//admin tasks
+	admin.Post("/user/:id/enable", userHandler.HandleEnableUser)
+	admin.Delete("task/:id", taskHandler.HandleDeleteTask)
 
-	apiv1Project.Post("/", projectHandler.HandlePostProject)
-	apiv1Project.Post("/:id/task", projectHandler.HandleAddTaskToProject)
-	apiv1Project.Get("/:id/task", projectHandler.HandleGetTasks)
+	apiv1.Get("/task", taskHandler.HandleGetTasks)
+	apiv1.Post("/task", taskHandler.HandlePostTask)
+	apiv1.Get("task/:id", taskHandler.HandleGetTask)
+	apiv1.Post("task/:id/complete", taskHandler.HandleCompleteTask)
 
-	// app := fiber.New(config)
-	// apiv1 := app.Group("/api/v1/task")
-	// taskStore, err := db.NewPostgresTaskStore()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// taskHandler := api.NewTaskHandler(taskStore)
-	// apiv1.Post("/", taskHandler.HandlePostTask)
-	// apiv1.Get("/:id", taskHandler.HandleGetTask)
-	// apiv1.Delete("/:id", taskHandler.HandleDeleteTask)
-	// apiv1.Get("/", taskHandler.HandleGetTasks)
+	apiv1.Post("project/", projectHandler.HandlePostProject)
+	apiv1.Post("project/:id/task", projectHandler.HandleAddTaskToProject)
+	apiv1.Get("project/:id/task", projectHandler.HandleGetTasks)
+
 	log.Fatal(app.Listen(*listenAddr))
 
 }

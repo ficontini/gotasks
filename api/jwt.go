@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
-	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -25,7 +25,7 @@ func JWTAuthentication(userStore db.UserStore) fiber.Handler {
 			return ErrUnAuthorized()
 		}
 		userID := claims["id"].(string)
-		user, err := userStore.GetUserByID(c.Context(), types.ID(userID))
+		user, err := userStore.GetUserByID(c.Context(), data.ID(userID))
 		if err != nil {
 			return ErrUnAuthorized()
 		}
