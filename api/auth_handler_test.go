@@ -20,7 +20,7 @@ func TestAuthenticateSuccess(t *testing.T) {
 
 	var (
 		password    = "supersecurepassword"
-		user        = fixtures.AddUser(db.Store, "james", "foo", password, false)
+		user        = fixtures.AddUser(db.Store, "james", "foo", password, false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		authHandler = NewAuthHandler(db.User)
 		params      = data.AuthParams{
@@ -51,7 +51,7 @@ func TestAuthenticateWrongWithPasswordFailure(t *testing.T) {
 	defer db.teardown(t)
 
 	var (
-		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword", false)
+		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword", false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		authHandler = NewAuthHandler(db.User)
 		params      = data.AuthParams{

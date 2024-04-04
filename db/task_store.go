@@ -17,7 +17,8 @@ type TaskStore interface {
 
 type TaskUpdater interface {
 	Update(context.Context, data.ID, data.UpdateTaskParams) error
-	UpdateTaskProjects(context.Context, data.ID, data.ID) error
+	UpdateTaskProjects(context.Context, Map, Map) error
+	//Update(context.Context, data.ID, Map) error
 }
 type TaskGetter interface {
 	GetTasks(context.Context, Map, *Pagination) ([]*data.Task, error)

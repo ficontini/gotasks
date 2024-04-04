@@ -42,14 +42,22 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	return c.JSON(insertedUser)
 }
 func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if len(id) == 0 {
+	idStr := c.Params("id")
+	if len(idStr) == 0 {
 		return ErrInvalidID()
 	}
-	if err := h.userStore.Update(c.Context(), data.ID(id), db.Map{"enabled": true}); err != nil {
+	id := data.ID(idStr)
+	user, err := h.userStore.GetUserByID(c.Context(), id)
+	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrResourceNotFound("user")
 		}
+		return err
+	}
+	if user.Enabled {
+		return ErrConflict()
+	}
+	if err := h.userStore.Update(c.Context(), id, db.Map{"enabled": true}); err != nil {
 		return err
 	}
 	return c.JSON(fiber.Map{"enabled": id})

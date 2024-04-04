@@ -21,12 +21,14 @@ type ProjectStore interface {
 type MongoProjectStore struct {
 	client *mongo.Client
 	coll   *mongo.Collection
+	TaskStore
 }
 
-func NewMongoProjectStore(client *mongo.Client) *MongoProjectStore {
+func NewMongoProjectStore(client *mongo.Client, taskStore TaskStore) *MongoProjectStore {
 	return &MongoProjectStore{
-		client: client,
-		coll:   client.Database(DBNAME).Collection(projectColl),
+		client:    client,
+		coll:      client.Database(DBNAME).Collection(projectColl),
+		TaskStore: taskStore,
 	}
 }
 func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Project) (*data.Project, error) {
@@ -51,8 +53,10 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id data.ID) (*da
 	}
 	return project, nil
 }
-func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, id data.ID, taskID data.ID) error {
-	oid, err := id.ObjectID()
+
+// TODO: review
+func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, projectID data.ID, taskID data.ID) error {
+	oprojectID, err := projectID.ObjectID()
 	if err != nil {
 		return err
 	}
@@ -60,7 +64,15 @@ func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, id data.ID, 
 	if err != nil {
 		return err
 	}
-	update := bson.M{"$push": bson.M{"tasks": otaskID}}
-	_, err = s.coll.UpdateByID(ctx, oid, update)
+	update := Map{"$push": Map{"tasks": otaskID}}
+	res, err := s.coll.UpdateByID(ctx, oprojectID, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrorNotFound
+	}
+	updateTask := Map{"$push": Map{"projects": oprojectID}}
+	err = s.TaskStore.UpdateTaskProjects(ctx, Map{"_id": otaskID}, updateTask)
 	return err
 }

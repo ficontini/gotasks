@@ -58,6 +58,7 @@ func (h *ProjectHandler) HandleGetTasks(c *fiber.Ctx) error {
 	if project.UserID != user.ID {
 		return ErrUnAuthorized()
 	}
+	//TODO: implement pagination params
 	pagination := &db.Pagination{}
 	tasks, err := h.store.Task.GetTasksByProject(c.Context(), data.ID(id), pagination)
 	if err != nil {
@@ -93,13 +94,10 @@ func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	if project.ContainsTask(task.ID) {
 		return ErrBadRequestCustomMessage(fmt.Sprintf("task %s is already associated with this project", task.ID))
 	}
-	if err := h.store.Project.UpdateProjectTasks(c.Context(), project.ID, task.ID); err != nil {
+	if err := h.store.Project.UpdateProjectTasks(c.Context(), data.ID(id), data.ID(params.TaskID)); err != nil {
 		return err
 	}
-	if err := h.store.Task.UpdateTaskProjects(c.Context(), task.ID, project.ID); err != nil {
-		return err
-	}
-	return c.JSON(fiber.Map{"updated": project.ID})
+	return c.JSON(fiber.Map{"updated": data.ID(id)})
 }
 func (h *ProjectHandler) getProjectByID(ctx context.Context, id data.ID) (*data.Project, error) {
 	project, err := h.store.Project.GetProjectByID(ctx, id)

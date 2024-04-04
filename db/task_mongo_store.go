@@ -16,7 +16,6 @@ type MongoTaskStore struct {
 	coll   *mongo.Collection
 }
 
-// TODO: review
 func NewMongoTaskStore(client *mongo.Client) *MongoTaskStore {
 	return &MongoTaskStore{
 		client: client,
@@ -31,19 +30,9 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *data.Task) (*data
 	task.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
 	return task, nil
 }
+
 func (s *MongoTaskStore) Update(ctx context.Context, id data.ID, params data.UpdateTaskParams) error {
 	update := bson.M{"$set": params.ToMap()}
-	return s.update(ctx, id, update)
-}
-func (s *MongoTaskStore) UpdateTaskProjects(ctx context.Context, id data.ID, projectID data.ID) error {
-	oprojectID, err := projectID.ObjectID()
-	if err != nil {
-		return err
-	}
-	update := bson.M{"$push": bson.M{"projects": oprojectID}}
-	return s.update(ctx, id, update)
-}
-func (s *MongoTaskStore) update(ctx context.Context, id data.ID, update bson.M) error {
 	oid, err := id.ObjectID()
 	if err != nil {
 		return err
@@ -57,6 +46,18 @@ func (s *MongoTaskStore) update(ctx context.Context, id data.ID, update bson.M) 
 	}
 	return nil
 }
+
+func (s *MongoTaskStore) UpdateTaskProjects(ctx context.Context, filter Map, update Map) error {
+	res, err := s.coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrorNotFound
+	}
+	return nil
+}
+
 func (s *MongoTaskStore) Delete(ctx context.Context, id data.ID) error {
 	oid, err := id.ObjectID()
 	if err != nil {

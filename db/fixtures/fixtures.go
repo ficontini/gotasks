@@ -37,7 +37,7 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 	}
 	return insertedTask
 }
-func AddUser(store *db.Store, fn, ln, pwd string, isAdmin bool) *data.User {
+func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *data.User {
 	user, err := data.NewUserFromParams(data.CreateUserParams{
 		FirstName: fn,
 		LastName:  ln,
@@ -45,6 +45,7 @@ func AddUser(store *db.Store, fn, ln, pwd string, isAdmin bool) *data.User {
 		Password:  pwd,
 	})
 	user.IsAdmin = isAdmin
+	user.Enabled = enabled
 	if err != nil {
 		log.Fatal(err)
 	}

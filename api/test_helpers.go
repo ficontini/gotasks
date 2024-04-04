@@ -27,12 +27,13 @@ func setup(t *testing.T) *testdb {
 	if err != nil {
 		log.Fatal(err)
 	}
+	taskStore := db.NewMongoTaskStore(client)
 	return &testdb{
 		client: client,
 		Store: &db.Store{
-			Task:    db.NewMongoTaskStore(client),
+			Task:    taskStore,
 			User:    db.NewMongoUserStore(client),
-			Project: db.NewMongoProjectStore(client),
+			Project: db.NewMongoProjectStore(client, taskStore),
 		},
 	}
 }

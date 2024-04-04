@@ -30,7 +30,7 @@ func main() {
 	var (
 		userStore    = db.NewMongoUserStore(client)
 		taskStore    = db.NewMongoTaskStore(client)
-		projectStore = db.NewMongoProjectStore(client)
+		projectStore = db.NewMongoProjectStore(client, taskStore)
 		store        = db.Store{
 			User:    userStore,
 			Task:    taskStore,

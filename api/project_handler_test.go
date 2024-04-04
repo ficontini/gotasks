@@ -20,7 +20,7 @@ func TestPostProjectSuccess(t *testing.T) {
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		apiv1          = app.Group("/", JWTAuthentication(db.User))
 		projectHandler = NewProjectHandler(db.Store)
-		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false)
+		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := data.CreateProjectParams{
@@ -50,7 +50,7 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		apiv1          = app.Group("/", JWTAuthentication(db.User))
 		projectHandler = NewProjectHandler(db.Store)
-		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false)
+		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := data.CreateProjectParams{
