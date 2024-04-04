@@ -1,23 +1,22 @@
 package api
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type ProjectHandler struct {
-	store *db.Store
+	projectService *service.ProjectService
 }
 
-func NewProjectHandler(store *db.Store) *ProjectHandler {
+func NewProjectHandler(projectService *service.ProjectService) *ProjectHandler {
 	return &ProjectHandler{
-		store: store,
+		projectService: projectService,
 	}
 }
 
@@ -33,21 +32,20 @@ func (h *ProjectHandler) HandlePostProject(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrInternalServer()
 	}
-	project := data.NewProjectFromParams(params)
-	project.UserID = user.ID
-	insertedProject, err := h.store.Project.InsertProject(c.Context(), project)
+	insertedProject, err := h.projectService.CreateProject(c.Context(), params, user.ID)
 	if err != nil {
 		return err
 	}
 	return c.JSON(insertedProject)
 
 }
+
 func (h *ProjectHandler) HandleGetTasks(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	project, err := h.store.Project.GetProjectByID(c.Context(), data.ID(id))
+	project, err := h.projectService.GetProjectByID(c.Context(), id)
 	if err != nil {
 		return ErrResourceNotFound("project")
 	}
@@ -60,7 +58,7 @@ func (h *ProjectHandler) HandleGetTasks(c *fiber.Ctx) error {
 	}
 	//TODO: implement pagination params
 	pagination := &db.Pagination{}
-	tasks, err := h.store.Task.GetTasksByProject(c.Context(), data.ID(id), pagination)
+	tasks, err := h.projectService.GetTasksByProject(c.Context(), id, pagination)
 	if err != nil {
 		return err
 	}
@@ -76,8 +74,11 @@ func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
-	project, err := h.getProjectByID(c.Context(), data.ID(id))
+	project, err := h.projectService.GetProjectByID(c.Context(), id)
 	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound("project")
+		}
 		return err
 	}
 	user, err := getAuthUser(c)
@@ -87,35 +88,16 @@ func (h *ProjectHandler) HandleAddTaskToProject(c *fiber.Ctx) error {
 	if user.ID != project.UserID {
 		return ErrUnAuthorized()
 	}
-	task, err := h.getTaskByID(c.Context(), data.ID(params.TaskID))
+	err = h.projectService.AddTask(c.Context(), project, params.TaskID)
 	if err != nil {
-		return err
-	}
-	if project.ContainsTask(task.ID) {
-		return ErrBadRequestCustomMessage(fmt.Sprintf("task %s is already associated with this project", task.ID))
-	}
-	if err := h.store.Project.UpdateProjectTasks(c.Context(), data.ID(id), data.ID(params.TaskID)); err != nil {
-		return err
+		switch {
+		case errors.Is(err, db.ErrorNotFound):
+			return ErrResourceNotFound("task")
+		case errors.Is(err, service.ErrTaskAlreadyAssociated):
+			return ErrBadRequestCustomMessage(err.Error())
+		default:
+			return err
+		}
 	}
 	return c.JSON(fiber.Map{"updated": data.ID(id)})
-}
-func (h *ProjectHandler) getProjectByID(ctx context.Context, id data.ID) (*data.Project, error) {
-	project, err := h.store.Project.GetProjectByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
-			return nil, ErrResourceNotFound("project")
-		}
-		return nil, err
-	}
-	return project, nil
-}
-func (h *ProjectHandler) getTaskByID(ctx context.Context, id data.ID) (*data.Task, error) {
-	task, err := h.store.Task.GetTaskByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
-			return nil, ErrResourceNotFound("task")
-		}
-		return nil, err
-	}
-	return task, nil
 }

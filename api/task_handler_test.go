@@ -11,6 +11,7 @@ import (
 
 	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db/fixtures"
+	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,7 +20,8 @@ func TestPostTaskSuccess(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New()
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
 	)
 
 	app.Post("/", taskHandler.HandlePostTask)
@@ -46,9 +48,12 @@ func TestPostTaskSuccess(t *testing.T) {
 func TestPostTaskWithWrongDueDate(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
+	)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
 	app.Post("/", taskHandler.HandlePostTask)
 
 	params := data.CreateTaskParams{
@@ -65,8 +70,11 @@ func TestPostInvalidTitle(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
+	)
 	app.Post("/", taskHandler.HandlePostTask)
 
 	params := data.CreateTaskParams{
@@ -84,8 +92,11 @@ func TestPostEmptyRequestBody(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
+	)
 	app.Post("/", taskHandler.HandlePostTask)
 
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("{}"))
@@ -104,7 +115,8 @@ func TestDeleteTaskSuccess(t *testing.T) {
 	var (
 		insertedTask = fixtures.AddTask(db.Store, "fake-task", "fake task description", time.Now().AddDate(0, 0, 2), false)
 		app          = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler  = NewTaskHandler(db.Task)
+		taskService  = service.NewTaskService(db.Task)
+		taskHandler  = NewTaskHandler(taskService)
 	)
 	app.Delete("/:id", taskHandler.HandleDeleteTask)
 	app.Get("/:id", taskHandler.HandleGetTask)
@@ -127,7 +139,8 @@ func TestDeleteTaskWithWrongID(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
 		wrongID     = "609c4b22a2c2d9c3f83a01f6"
 	)
 	app.Delete("/:id", taskHandler.HandleDeleteTask)
@@ -143,7 +156,8 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
 		task        = fixtures.AddTask(db.Store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
 	)
 	app.Post("/:id/complete", taskHandler.HandleCompleteTask)
@@ -176,7 +190,8 @@ func TestCompleteTaskWithCompletedStatus(t *testing.T) {
 
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Task)
+		taskHandler = NewTaskHandler(taskService)
 		task        = fixtures.AddTask(db.Store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
 	)
 	app.Post("/:id/complete", taskHandler.HandleCompleteTask)

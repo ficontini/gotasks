@@ -50,8 +50,8 @@ func ErrInvalidCredentials() Error {
 func ErrForbidden() Error {
 	return NewError(http.StatusForbidden, "user account is not enabled. Please contact the administrator for assistance.")
 }
-func ErrConflict() Error {
-	return NewError(http.StatusConflict, "user is already enabled")
+func ErrConflict(msg string) Error {
+	return NewError(http.StatusConflict, msg)
 }
 func ErrInternalServer() Error {
 	return NewError(http.StatusInternalServerError, "internal server error")

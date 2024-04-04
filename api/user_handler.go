@@ -1,22 +1,22 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
-	userStore db.UserStore
+	userService service.UserService
 }
 
-func NewUserHandler(userStore db.UserStore) *UserHandler {
+func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{
-		userStore: userStore,
+		userService: userService,
 	}
 }
 
@@ -28,41 +28,30 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	if h.isEmailAlreadyInUse(c.Context(), params.Email) {
-		return ErrBadRequestCustomMessage("email already in use")
-	}
-	user, err := data.NewUserFromParams(params)
+	insertedUser, err := h.userService.CreateUser(c.Context(), params)
 	if err != nil {
-		return err
-	}
-	insertedUser, err := h.userStore.InsertUser(c.Context(), user)
-	if err != nil {
+		if errors.Is(err, service.ErrEmailAlreadyInUse) {
+			return ErrBadRequestCustomMessage(err.Error())
+		}
 		return err
 	}
 	return c.JSON(insertedUser)
 }
 func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
-	idStr := c.Params("id")
-	if len(idStr) == 0 {
+	id := c.Params("id")
+	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	id := data.ID(idStr)
-	user, err := h.userStore.GetUserByID(c.Context(), id)
-	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
+	if err := h.userService.EnableUser(c.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, db.ErrorNotFound):
 			return ErrResourceNotFound("user")
+		case errors.Is(err, service.ErrConflict):
+			return ErrConflict(err.Error())
+		default:
+			return err
 		}
-		return err
 	}
-	if user.Enabled {
-		return ErrConflict()
-	}
-	if err := h.userStore.Update(c.Context(), id, db.Map{"enabled": true}); err != nil {
-		return err
-	}
+
 	return c.JSON(fiber.Map{"enabled": id})
-}
-func (h *UserHandler) isEmailAlreadyInUse(ctx context.Context, email string) bool {
-	user, _ := h.userStore.GetUserByEmail(ctx, email)
-	return user != nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db/fixtures"
+	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,7 +20,8 @@ func TestPostProjectSuccess(t *testing.T) {
 	var (
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		apiv1          = app.Group("/", JWTAuthentication(db.User))
-		projectHandler = NewProjectHandler(db.Store)
+		projectService = service.NewProjectService(*db.Store)
+		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
@@ -49,7 +51,8 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 	var (
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
 		apiv1          = app.Group("/", JWTAuthentication(db.User))
-		projectHandler = NewProjectHandler(db.Store)
+		projectService = service.NewProjectService(*db.Store)
+		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)

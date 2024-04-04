@@ -7,6 +7,7 @@ import (
 
 	"github.com/ficontini/gotasks/api"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -28,18 +29,20 @@ func main() {
 	}
 
 	var (
-		userStore    = db.NewMongoUserStore(client)
-		taskStore    = db.NewMongoTaskStore(client)
-		projectStore = db.NewMongoProjectStore(client, taskStore)
-		store        = db.Store{
+		userStore = db.NewMongoUserStore(client)
+		taskStore = db.NewMongoTaskStore(client)
+		store     = db.Store{
 			User:    userStore,
 			Task:    taskStore,
-			Project: projectStore,
+			Project: db.NewMongoProjectStore(client, taskStore),
 		}
-		taskHandler    = api.NewTaskHandler(taskStore)
-		userHandler    = api.NewUserHandler(userStore)
+		taskService    = service.NewTaskService(taskStore)
+		projectService = service.NewProjectService(store)
+		userService    = service.NewUserService(userStore)
+		taskHandler    = api.NewTaskHandler(taskService)
+		userHandler    = api.NewUserHandler(*userService)
 		authHandler    = api.NewAuthHandler(userStore)
-		projectHandler = api.NewProjectHandler(&store)
+		projectHandler = api.NewProjectHandler(projectService)
 		app            = fiber.New(config)
 		auth           = app.Group("/api")
 		apiv1          = app.Group("/api/v1", api.JWTAuthentication(userStore))

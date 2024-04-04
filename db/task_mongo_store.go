@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ficontini/gotasks/data"
 
@@ -98,6 +99,7 @@ func (s *MongoTaskStore) GetTasksByProject(ctx context.Context, id data.ID, pagi
 }
 func (s *MongoTaskStore) getTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*data.Task, error) {
 	opts := pagination.getOptions()
+	fmt.Println("---", pagination)
 	cur, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
