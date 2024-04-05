@@ -22,3 +22,7 @@ type TaskGetter interface {
 	GetTasks(context.Context, Map, *Pagination) ([]*data.Task, error)
 	GetTaskByID(context.Context, string) (*data.Task, error)
 }
+
+type Deleter interface {
+	Delete(context.Context, string) error
+}

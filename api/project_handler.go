@@ -1,9 +1,11 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -36,4 +38,18 @@ func (h *ProjectHandler) HandlePostProject(c *fiber.Ctx) error {
 	}
 	return c.JSON(insertedProject)
 
+}
+func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	project, err := h.projectService.GetProjectByID(c.Context(), id)
+	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound("project")
+		}
+		return err
+	}
+	return c.JSON(project)
 }

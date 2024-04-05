@@ -55,6 +55,10 @@ func checkStatusCode(t *testing.T, expected, actual int) {
 }
 
 func Init() error {
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Fatal(err)
+		return err
+	}
 	testdburi = os.Getenv(MongoTestEndpoint)
 	if testdburi == "" {
 		return fmt.Errorf("%s env variable not set", MongoTestEndpoint)
@@ -64,10 +68,4 @@ func Init() error {
 		return fmt.Errorf("%s env variable not set", db.MongoDBNameEnvName)
 	}
 	return nil
-}
-
-func init() {
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Fatal(err)
-	}
 }

@@ -33,7 +33,7 @@ func NewMongoProjectStore(client *mongo.Client, taskStore TaskStore) *MongoProje
 func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Project) (*data.Project, error) {
 	res, err := s.coll.InsertOne(ctx, project)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidID
 	}
 	project.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return project, nil
@@ -41,7 +41,7 @@ func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Pro
 func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidID
 	}
 	var project *data.Project
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&project); err != nil {

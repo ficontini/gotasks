@@ -6,6 +6,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const (
+	DEFAULT_PAGE  = 1
+	DEFAULT_LIMIT = 10
+)
+
 type Map map[string]any
 
 type TaskQueryParams struct {

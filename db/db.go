@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	DEFAULT_PAGE       = 1
-	DEFAULT_LIMIT      = 10
 	MongoEndpoint      = "MONGO_DB_URI"
 	MongoDBNameEnvName = "MONGO_DB_NAME"
 )
@@ -21,6 +19,7 @@ var (
 	DBNAME        string
 	DBURI         string
 	ErrorNotFound = errors.New("resource not found")
+	ErrInvalidID  = errors.New("invalid ID")
 )
 
 type Store struct {
@@ -55,8 +54,4 @@ func SetupMongoDBConfigFromEnv() error {
 		return fmt.Errorf("%s env variable not set", MongoDBNameEnvName)
 	}
 	return nil
-}
-
-type Deleter interface {
-	Delete(context.Context, string) error
 }
