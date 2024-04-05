@@ -19,7 +19,7 @@ func NewTaskService(taskStore db.TaskStore) *TaskService {
 }
 
 func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
-	task, err := svc.taskStore.GetTaskByID(ctx, data.ID(id))
+	task, err := svc.taskStore.GetTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +48,9 @@ func (svc *TaskService) GetTasks(ctx context.Context, params *db.TaskQueryParams
 }
 
 func (svc *TaskService) DeleteTask(ctx context.Context, id string) error {
-	return svc.taskStore.Delete(ctx, data.ID(id))
+	return svc.taskStore.Delete(ctx, id)
 }
-func (svc *TaskService) CompleteTask(ctx context.Context, idStr string) error {
-	id := data.ID(idStr)
+func (svc *TaskService) CompleteTask(ctx context.Context, id string) error {
 	completed, err := svc.IsTaskCompleted(ctx, id)
 	if err != nil {
 		return err
@@ -62,9 +61,9 @@ func (svc *TaskService) CompleteTask(ctx context.Context, idStr string) error {
 	params := data.UpdateTaskParams{
 		Completed: true,
 	}
-	return svc.taskStore.Update(ctx, data.ID(id), params)
+	return svc.taskStore.Update(ctx, id, params)
 }
-func (svc *TaskService) IsTaskCompleted(ctx context.Context, id data.ID) (bool, error) {
+func (svc *TaskService) IsTaskCompleted(ctx context.Context, id string) (bool, error) {
 	task, err := svc.taskStore.GetTaskByID(ctx, id)
 	if err != nil {
 		return false, err

@@ -169,7 +169,7 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	checkStatusCode(t, http.StatusOK, res.StatusCode)
 	var result map[string]string
 	json.NewDecoder(res.Body).Decode(&result)
-	if result["updated"] != task.ID.String() {
+	if result["updated"] != task.ID {
 		t.Fatal("updating a different task")
 	}
 	app.Get("/:id", taskHandler.HandleGetTask)

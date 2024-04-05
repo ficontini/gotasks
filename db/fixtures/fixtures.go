@@ -10,7 +10,7 @@ import (
 	"github.com/ficontini/gotasks/db"
 )
 
-func AddProject(store *db.Store, title, description string, userID data.ID, tasks []data.ID) *data.Project {
+func AddProject(store *db.Store, title, description string, userID string, tasks []string) *data.Project {
 	project := &data.Project{
 		Title:       title,
 		Description: description,
@@ -29,7 +29,7 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 		Description: description,
 		DueDate:     dueTo,
 		Completed:   completed,
-		Projects:    []data.ID{},
+		Projects:    []string{},
 	}
 	insertedTask, err := store.Task.InsertTask(context.Background(), task)
 	if err != nil {

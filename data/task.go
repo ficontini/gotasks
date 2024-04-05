@@ -6,12 +6,12 @@ import (
 )
 
 type Task struct {
-	ID          ID        `bson:"_id,omitempty" json:"id,omitempty"`
+	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
 	Title       string    `bson:"title" json:"title"`
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
 	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" json:"completed"`
-	Projects    []ID      `bson:"projects" json:"-"`
+	Projects    []string  `bson:"projects" json:"-"`
 }
 
 type CreateTaskParams struct {
@@ -25,7 +25,7 @@ func NewTaskFromParams(params CreateTaskParams) *Task {
 		Title:       params.Title,
 		Description: params.Description,
 		DueDate:     params.DueDate,
-		Projects:    []ID{},
+		Projects:    []string{},
 	}
 }
 func (params CreateTaskParams) Validate() map[string]string {

@@ -14,10 +14,10 @@ import (
 const userColl = "users"
 
 type UserStore interface {
-	GetUserByID(context.Context, data.ID) (*data.User, error)
+	GetUserByID(context.Context, string) (*data.User, error)
 	GetUserByEmail(context.Context, string) (*data.User, error)
 	InsertUser(context.Context, *data.User) (*data.User, error)
-	Update(context.Context, data.ID, Map) error
+	Update(context.Context, string, Map) error
 }
 
 type MongoUserStore struct {
@@ -42,8 +42,8 @@ func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*dat
 	}
 	return user, nil
 }
-func (s *MongoUserStore) GetUserByID(ctx context.Context, id data.ID) (*data.User, error) {
-	oid, err := id.ObjectID()
+func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*data.User, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +61,11 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *data.User) (*data
 	if err != nil {
 		return nil, err
 	}
-	user.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
+	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return user, nil
 }
-func (s *MongoUserStore) Update(ctx context.Context, id data.ID, params Map) error {
-	oid, err := id.ObjectID()
+func (s *MongoUserStore) Update(ctx context.Context, id string, params Map) error {
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}

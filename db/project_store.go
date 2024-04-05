@@ -13,9 +13,8 @@ import (
 const projectColl = "projects"
 
 type ProjectStore interface {
-	GetProjectByID(context.Context, data.ID) (*data.Project, error)
+	GetProjectByID(context.Context, string) (*data.Project, error)
 	InsertProject(context.Context, *data.Project) (*data.Project, error)
-	UpdateProjectTasks(context.Context, data.ID, data.ID) error
 }
 
 type MongoProjectStore struct {
@@ -36,11 +35,11 @@ func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Pro
 	if err != nil {
 		return nil, err
 	}
-	project.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
+	project.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return project, nil
 }
-func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id data.ID) (*data.Project, error) {
-	oid, err := id.ObjectID()
+func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,27 +51,4 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id data.ID) (*da
 		return nil, err
 	}
 	return project, nil
-}
-
-// TODO: review
-func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, projectID data.ID, taskID data.ID) error {
-	oprojectID, err := projectID.ObjectID()
-	if err != nil {
-		return err
-	}
-	otaskID, err := taskID.ObjectID()
-	if err != nil {
-		return err
-	}
-	update := Map{"$push": Map{"tasks": otaskID}}
-	res, err := s.coll.UpdateByID(ctx, oprojectID, update)
-	if err != nil {
-		return err
-	}
-	if res.ModifiedCount == 0 {
-		return ErrorNotFound
-	}
-	updateTask := Map{"$push": Map{"projects": oprojectID}}
-	err = s.TaskStore.UpdateTaskProjects(ctx, Map{"_id": otaskID}, updateTask)
-	return err
 }

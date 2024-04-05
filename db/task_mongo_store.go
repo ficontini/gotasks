@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/ficontini/gotasks/data"
 
@@ -28,13 +27,13 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *data.Task) (*data
 	if err != nil {
 		return nil, err
 	}
-	task.ID = data.CreateIDFromObjectID(res.InsertedID.(primitive.ObjectID))
+	task.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return task, nil
 }
 
-func (s *MongoTaskStore) Update(ctx context.Context, id data.ID, params data.UpdateTaskParams) error {
+func (s *MongoTaskStore) Update(ctx context.Context, id string, params data.UpdateTaskParams) error {
 	update := bson.M{"$set": params.ToMap()}
-	oid, err := id.ObjectID()
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
@@ -48,19 +47,8 @@ func (s *MongoTaskStore) Update(ctx context.Context, id data.ID, params data.Upd
 	return nil
 }
 
-func (s *MongoTaskStore) UpdateTaskProjects(ctx context.Context, filter Map, update Map) error {
-	res, err := s.coll.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return err
-	}
-	if res.ModifiedCount == 0 {
-		return ErrorNotFound
-	}
-	return nil
-}
-
-func (s *MongoTaskStore) Delete(ctx context.Context, id data.ID) error {
-	oid, err := id.ObjectID()
+func (s *MongoTaskStore) Delete(ctx context.Context, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
@@ -73,8 +61,8 @@ func (s *MongoTaskStore) Delete(ctx context.Context, id data.ID) error {
 	}
 	return nil
 }
-func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id data.ID) (*data.Task, error) {
-	oid, err := id.ObjectID()
+func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
@@ -88,18 +76,7 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id data.ID) (*data.Tas
 	return task, nil
 }
 func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*data.Task, error) {
-	return s.getTasks(ctx, filter, pagination)
-}
-func (s *MongoTaskStore) GetTasksByProject(ctx context.Context, id data.ID, pagination *Pagination) ([]*data.Task, error) {
-	oid, err := id.ObjectID()
-	if err != nil {
-		return nil, err
-	}
-	return s.getTasks(ctx, Map{"projects": oid}, pagination)
-}
-func (s *MongoTaskStore) getTasks(ctx context.Context, filter Map, pagination *Pagination) ([]*data.Task, error) {
 	opts := pagination.getOptions()
-	fmt.Println("---", pagination)
 	cur, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err

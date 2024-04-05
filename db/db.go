@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ficontini/gotasks/data"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -64,5 +63,5 @@ type Store struct {
 	Project ProjectStore
 }
 type Deleter interface {
-	Delete(context.Context, data.ID) error
+	Delete(context.Context, string) error
 }

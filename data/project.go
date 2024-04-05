@@ -3,14 +3,14 @@ package data
 import "fmt"
 
 type Project struct {
-	ID          ID     `bson:"_id,omitempty" json:"id,omitempty"`
-	Title       string `bson:"title" json:"title"`
-	Description string `bson:"description" json:"description"`
-	UserID      ID     `bson:"userID" json:"userID"`
-	Tasks       []ID   `bson:"tasks" json:"tasks"`
+	ID          string   `bson:"_id,omitempty" json:"id,omitempty"`
+	Title       string   `bson:"title" json:"title"`
+	Description string   `bson:"description" json:"description"`
+	UserID      string   `bson:"userID" json:"userID"`
+	Tasks       []string `bson:"tasks" json:"tasks"`
 }
 
-func (project *Project) ContainsTask(taskID ID) bool {
+func (project *Project) ContainsTask(taskID string) bool {
 	for _, id := range project.Tasks {
 		if id == taskID {
 			return true
@@ -28,7 +28,7 @@ func NewProjectFromParams(params CreateProjectParams) *Project {
 	return &Project{
 		Title:       params.Title,
 		Description: params.Description,
-		Tasks:       []ID{},
+		Tasks:       []string{},
 	}
 }
 func (params CreateProjectParams) Validate() map[string]string {
@@ -48,6 +48,6 @@ type AddTaskParams struct {
 
 func (p AddTaskParams) ToMap() map[string]any {
 	return map[string]any{
-		"tasks": ID(p.TaskID),
+		"tasks": p.TaskID,
 	}
 }

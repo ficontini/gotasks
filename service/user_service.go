@@ -35,8 +35,7 @@ func (svc *UserService) isEmailAlreadyInUse(ctx context.Context, email string) b
 	return user != nil
 }
 
-func (svc *UserService) EnableUser(ctx context.Context, idStr string) error {
-	id := data.ID(idStr)
+func (svc *UserService) EnableUser(ctx context.Context, id string) error {
 	user, err := svc.userStore.GetUserByID(ctx, id)
 	if err != nil {
 		return err

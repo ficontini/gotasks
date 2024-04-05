@@ -62,8 +62,6 @@ func main() {
 	apiv1.Post("task/:id/complete", taskHandler.HandleCompleteTask)
 
 	apiv1.Post("project/", projectHandler.HandlePostProject)
-	apiv1.Post("project/:id/task", projectHandler.HandleAddTaskToProject)
-	apiv1.Get("project/:id/task", projectHandler.HandleGetTasks)
 
 	log.Fatal(app.Listen(*listenAddr))
 
