@@ -4,64 +4,59 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	DBNAME        = "gotasks"
-	DBURI         = "mongodb://localhost:27017"
-	DEFAULT_PAGE  = 1
-	DEFAULT_LIMIT = 10
+	DEFAULT_PAGE       = 1
+	DEFAULT_LIMIT      = 10
+	MongoEndpoint      = "MONGO_DB_URI"
+	MongoDBNameEnvName = "MONGO_DB_NAME"
 )
 
-// TODO: Review
-var ErrorNotFound = errors.New("resource not found")
-
-type Map map[string]any
-
-type TaskQueryParams struct {
-	Pagination
-	Completed *bool
-}
-
-type Pagination struct {
-	Page  int64
-	Limit int64
-}
-
-// TODO: Review
-func (p *Pagination) SetDefaults() {
-	if p.Limit <= 0 {
-		p.Limit = DEFAULT_LIMIT
-	}
-	if p.Page <= 0 {
-		p.Page = DEFAULT_PAGE
-	}
-}
-func (p *Pagination) generatePagination() (skip int64, limit int64) {
-	p.SetDefaults()
-	skip = (p.Page - 1) * p.Limit
-	limit = p.Limit
-	return skip, limit
-}
-func (p *Pagination) getOptions() *options.FindOptions {
-	skip, limit := p.generatePagination()
-	opts := &options.FindOptions{}
-	opts.SetSkip(skip)
-	opts.SetLimit(limit)
-	return opts
-}
-func (p *Pagination) getQuery() string {
-	skip, limit := p.generatePagination()
-	return fmt.Sprintf("LIMIT %d OFFSET %d", limit, skip)
-}
+var (
+	DBNAME        string
+	DBURI         string
+	ErrorNotFound = errors.New("resource not found")
+)
 
 type Store struct {
-	Task    TaskStore
 	User    UserStore
+	Task    TaskStore
 	Project ProjectStore
 }
+
+func NewMongoStore() (*Store, error) {
+	if err := SetupMongoDBConfigFromEnv(); err != nil {
+		return nil, err
+	}
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(DBURI))
+	if err != nil {
+		return nil, err
+	}
+	taskStore := NewMongoTaskStore(client)
+	return &Store{
+		User:    NewMongoUserStore(client),
+		Task:    taskStore,
+		Project: NewMongoProjectStore(client, taskStore),
+	}, nil
+}
+
+func SetupMongoDBConfigFromEnv() error {
+	DBURI = os.Getenv(MongoEndpoint)
+	if DBURI == "" {
+		return fmt.Errorf("%s env variable not set", MongoEndpoint)
+	}
+	DBNAME = os.Getenv(MongoDBNameEnvName)
+	if DBNAME == "" {
+		return fmt.Errorf("%s env variable not set", MongoDBNameEnvName)
+	}
+	return nil
+}
+
 type Deleter interface {
 	Delete(context.Context, string) error
 }

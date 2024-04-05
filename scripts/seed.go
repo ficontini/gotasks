@@ -9,6 +9,7 @@ import (
 
 	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/db/fixtures"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -36,4 +37,14 @@ func main() {
 	fixtures.AddUser(store, "james", "foobaz", "supersecurepassword", false, true)
 	fixtures.AddUser(store, "admin", "foobaz", "supersecurepassword", true, true)
 	fmt.Println("seeding the database")
+}
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+	if err := db.SetupMongoDBConfigFromEnv(); err != nil {
+		log.Fatal(err)
+	}
+
 }

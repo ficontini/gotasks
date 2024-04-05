@@ -20,18 +20,12 @@ func NewTaskService(taskStore db.TaskStore) *TaskService {
 
 func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
 	task, err := svc.taskStore.GetTaskByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return task, nil
+	return task, err
 }
 func (svc *TaskService) CreateTask(ctx context.Context, params data.CreateTaskParams) (*data.Task, error) {
 	task := data.NewTaskFromParams(params)
 	insertedTask, err := svc.taskStore.InsertTask(ctx, task)
-	if err != nil {
-		return nil, err
-	}
-	return insertedTask, nil
+	return insertedTask, err
 }
 
 // TODO: review

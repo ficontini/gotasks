@@ -1,16 +1,14 @@
 package main
 
 import (
-	"context"
-	"flag"
 	"log"
+	"os"
 
 	"github.com/ficontini/gotasks/api"
 	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -20,32 +18,19 @@ var (
 )
 
 func main() {
-	listenAddr := flag.String("listenAddr", ":3000", "The listen address of the API server")
-	flag.Parse()
-
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	store, err := db.NewMongoStore()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	var (
-		userStore = db.NewMongoUserStore(client)
-		taskStore = db.NewMongoTaskStore(client)
-		store     = db.Store{
-			User:    userStore,
-			Task:    taskStore,
-			Project: db.NewMongoProjectStore(client, taskStore),
-		}
-		taskService    = service.NewTaskService(taskStore)
-		projectService = service.NewProjectService(store)
-		userService    = service.NewUserService(userStore)
-		taskHandler    = api.NewTaskHandler(taskService)
-		userHandler    = api.NewUserHandler(*userService)
-		authHandler    = api.NewAuthHandler(userStore)
-		projectHandler = api.NewProjectHandler(projectService)
+		taskHandler    = api.NewTaskHandler(service.NewTaskService(store.Task))
+		userHandler    = api.NewUserHandler(*service.NewUserService(store.User))
+		authHandler    = api.NewAuthHandler(store.User)
+		projectHandler = api.NewProjectHandler(service.NewProjectService(*store))
 		app            = fiber.New(config)
 		auth           = app.Group("/api")
-		apiv1          = app.Group("/api/v1", api.JWTAuthentication(userStore))
+		apiv1          = app.Group("/api/v1", api.JWTAuthentication(store.User))
 		admin          = apiv1.Group("/admin", api.AdminAuth)
 	)
 
@@ -63,6 +48,11 @@ func main() {
 
 	apiv1.Post("project/", projectHandler.HandlePostProject)
 
-	log.Fatal(app.Listen(*listenAddr))
-
+	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
+	log.Fatal(app.Listen(listenAddr))
+}
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
 }

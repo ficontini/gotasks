@@ -27,9 +27,6 @@ func (svc *ProjectService) CreateProject(ctx context.Context, params data.Create
 func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
 	return svc.store.Project.GetProjectByID(ctx, id)
 }
-func (svc *ProjectService) getTaskByID(ctx context.Context, id string) (*data.Task, error) {
-	return svc.store.Task.GetTaskByID(ctx, id)
-}
 
 var (
 	ErrTaskAlreadyAssociated = errors.New("task is already associated with this project")
