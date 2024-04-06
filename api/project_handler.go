@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
-	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -46,7 +45,7 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	}
 	project, err := h.projectService.GetProjectByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
+		if errors.Is(err, service.ErrResourceNotFound) {
 			return ErrResourceNotFound("project")
 		}
 		return err

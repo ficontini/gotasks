@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
-	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -44,7 +43,7 @@ func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
 	}
 	if err := h.userService.EnableUser(c.Context(), id); err != nil {
 		switch {
-		case errors.Is(err, db.ErrorNotFound):
+		case errors.Is(err, service.ErrResourceNotFound):
 			return ErrResourceNotFound("user")
 		case errors.Is(err, service.ErrConflict):
 			return ErrConflict(err.Error())

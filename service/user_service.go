@@ -38,12 +38,19 @@ func (svc *UserService) isEmailAlreadyInUse(ctx context.Context, email string) b
 func (svc *UserService) EnableUser(ctx context.Context, id string) error {
 	user, err := svc.userStore.GetUserByID(ctx, id)
 	if err != nil {
-		return err
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound
+		}
 	}
 	if user.Enabled {
 		return ErrConflict
 	}
 	if err := svc.userStore.Update(ctx, id, db.Map{"enabled": true}); err != nil {
+		if err != nil {
+			if errors.Is(err, db.ErrorNotFound) {
+				return ErrResourceNotFound
+			}
+		}
 		return err
 	}
 	return nil
@@ -52,4 +59,5 @@ func (svc *UserService) EnableUser(ctx context.Context, id string) error {
 var (
 	ErrEmailAlreadyInUse = errors.New("email already in use")
 	ErrConflict          = errors.New("user is already enabled")
+	ErrResourceNotFound  = errors.New("resource not found")
 )

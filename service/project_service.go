@@ -25,7 +25,14 @@ func (svc *ProjectService) CreateProject(ctx context.Context, params data.Create
 }
 
 func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
-	return svc.store.Project.GetProjectByID(ctx, id)
+	project, err := svc.store.Project.GetProjectByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+	return project, nil
 }
 
 var (

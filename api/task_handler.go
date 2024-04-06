@@ -24,7 +24,7 @@ func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	task, err := h.taskService.GetTaskByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
+		if errors.Is(err, service.ErrResourceNotFound) {
 			return ErrResourceNotFound("task")
 		}
 		return err
@@ -64,7 +64,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.taskService.CompleteTask(c.Context(), id); err != nil {
 		switch {
-		case errors.Is(err, db.ErrorNotFound):
+		case errors.Is(err, service.ErrResourceNotFound):
 			return ErrResourceNotFound("task")
 		case errors.Is(err, service.ErrTaskAlreadyCompleted):
 			return ErrBadRequestCustomMessage(err.Error())
@@ -78,7 +78,7 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.taskService.DeleteTask(c.Context(), id); err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
+		if errors.Is(err, service.ErrResourceNotFound) {
 			return ErrResourceNotFound("task")
 		}
 		return err

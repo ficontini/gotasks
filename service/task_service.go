@@ -20,7 +20,13 @@ func NewTaskService(taskStore db.TaskStore) *TaskService {
 
 func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
 	task, err := svc.taskStore.GetTaskByID(ctx, id)
-	return task, err
+	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return nil, ErrResourceNotFound
+		}
+		return nil, err
+	}
+	return task, nil
 }
 func (svc *TaskService) CreateTask(ctx context.Context, params data.CreateTaskParams) (*data.Task, error) {
 	task := data.NewTaskFromParams(params)
@@ -42,7 +48,13 @@ func (svc *TaskService) GetTasks(ctx context.Context, params *db.TaskQueryParams
 }
 
 func (svc *TaskService) DeleteTask(ctx context.Context, id string) error {
-	return svc.taskStore.Delete(ctx, id)
+	if err := svc.taskStore.Delete(ctx, id); err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound
+		}
+		return err
+	}
+	return nil
 }
 func (svc *TaskService) CompleteTask(ctx context.Context, id string) error {
 	completed, err := svc.IsTaskCompleted(ctx, id)
@@ -60,6 +72,9 @@ func (svc *TaskService) CompleteTask(ctx context.Context, id string) error {
 func (svc *TaskService) IsTaskCompleted(ctx context.Context, id string) (bool, error) {
 	task, err := svc.taskStore.GetTaskByID(ctx, id)
 	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return false, ErrResourceNotFound
+		}
 		return false, err
 	}
 	return task.Completed, nil
