@@ -48,6 +48,7 @@ func main() {
 
 	apiv1.Post("/project", projectHandler.HandlePostProject)
 	apiv1.Get("/project/:id", projectHandler.HandleGetProject)
+
 	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
 	log.Fatal(app.Listen(listenAddr))
 }

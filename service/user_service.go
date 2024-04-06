@@ -46,10 +46,8 @@ func (svc *UserService) EnableUser(ctx context.Context, id string) error {
 		return ErrConflict
 	}
 	if err := svc.userStore.Update(ctx, id, db.Map{"enabled": true}); err != nil {
-		if err != nil {
-			if errors.Is(err, db.ErrorNotFound) {
-				return ErrResourceNotFound
-			}
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrResourceNotFound
 		}
 		return err
 	}
