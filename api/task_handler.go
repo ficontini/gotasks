@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/ficontini/gotasks/data"
-	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,18 +21,36 @@ func NewTaskHandler(taskService *service.TaskService) *TaskHandler {
 }
 func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
 	task, err := h.taskService.GetTaskByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrResourceNotFound) {
-			return ErrResourceNotFound("task")
+		if errors.Is(err, service.ErrTaskNotFound) {
+			return ErrResourceNotFound(err.Error())
 		}
 		return err
 	}
 	return c.JSON(task)
 }
-
+func (h *TaskHandler) HandleGetUserTaks(c *fiber.Ctx) error {
+	user, err := getAuthUser(c)
+	if err != nil {
+		return err
+	}
+	var params service.TaskQueryParams
+	if err := c.QueryParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	tasks, err := h.taskService.GetTasksByUserID(c.Context(), user.ID, params)
+	if err != nil {
+		return err
+	}
+	resp := NewResourceResponse(tasks, len(tasks), params.Page)
+	return c.JSON(resp)
+}
 func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
-	var params db.TaskQueryParams
+	var params service.TaskQueryParams
 	if err := c.QueryParser(&params); err != nil {
 		return ErrBadRequest()
 	}
@@ -62,10 +79,19 @@ func (h *TaskHandler) HandlePostTask(c *fiber.Ctx) error {
 
 func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if err := h.taskService.CompleteTask(c.Context(), id); err != nil {
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	user, err := getAuthUser(c)
+	if err != nil {
+		return err
+	}
+	if err := h.taskService.CompleteTask(c.Context(), id, user.ID); err != nil {
 		switch {
-		case errors.Is(err, service.ErrResourceNotFound):
-			return ErrResourceNotFound("task")
+		case errors.Is(err, service.ErrUnAuthorized):
+			return ErrUnAuthorized()
+		case errors.Is(err, service.ErrTaskNotFound):
+			return ErrResourceNotFound(err.Error())
 		case errors.Is(err, service.ErrTaskAlreadyCompleted):
 			return ErrBadRequestCustomMessage(err.Error())
 		default:
@@ -77,11 +103,56 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 }
 func (h *TaskHandler) HandleDeleteTask(c *fiber.Ctx) error {
 	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
 	if err := h.taskService.DeleteTask(c.Context(), id); err != nil {
-		if errors.Is(err, service.ErrResourceNotFound) {
-			return ErrResourceNotFound("task")
+		if errors.Is(err, service.ErrTaskNotFound) {
+			return ErrResourceNotFound(err.Error())
 		}
 		return err
 	}
 	return c.JSON(fiber.Map{"deleted": id})
+}
+
+func (h *TaskHandler) HandleAssignTaskToSelf(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	user, err := getAuthUser(c)
+	if err != nil {
+		return err
+	}
+	req := data.TaskAssignmentRequest{
+		UserID: user.ID,
+	}
+	if err := h.taskService.AssignMeTask(c.Context(), id, req); err != nil {
+		if errors.Is(err, service.ErrTaskNotFound) {
+			return ErrResourceNotFound(err.Error())
+		}
+		return err
+	}
+	return c.JSON(fiber.Map{"assigned": "true"})
+}
+func (h *TaskHandler) HandleAssignTaskToUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	var req data.TaskAssignmentRequest
+	if err := c.BodyParser(&req); err != nil {
+		return ErrBadRequest()
+	}
+	if err := h.taskService.AssignTaskToUser(c.Context(), id, req); err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrTaskNotFound):
+			return ErrResourceNotFound(err.Error())
+		default:
+			return err
+		}
+	}
+	return c.JSON(fiber.Map{"assigned": "true"})
 }

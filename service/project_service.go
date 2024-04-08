@@ -28,7 +28,7 @@ func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*data
 	project, err := svc.store.Project.GetProjectByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
-			return nil, ErrResourceNotFound
+			return nil, ErrProjectNotFound
 		}
 		return nil, err
 	}
@@ -37,4 +37,5 @@ func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*data
 
 var (
 	ErrTaskAlreadyAssociated = errors.New("task is already associated with this project")
+	ErrProjectNotFound       = errors.New("project resource not found")
 )

@@ -13,11 +13,6 @@ const (
 
 type Map map[string]any
 
-type TaskQueryParams struct {
-	Pagination
-	Completed *bool
-}
-
 type Pagination struct {
 	Page  int64
 	Limit int64

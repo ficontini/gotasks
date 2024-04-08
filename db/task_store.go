@@ -16,11 +16,14 @@ type TaskStore interface {
 }
 
 type TaskUpdater interface {
-	Update(context.Context, string, data.UpdateTaskParams) error
+	//Update(context.Context, string, Map) error
+	SetTaskAsComplete(context.Context, string, data.TaskCompletionRequest) error
+	SetTaskAssignee(context.Context, string, data.TaskAssignmentRequest) error
 }
 type TaskGetter interface {
-	GetTasks(context.Context, Map, *Pagination) ([]*data.Task, error)
+	GetTasks(context.Context, data.Filter, *Pagination) ([]*data.Task, error)
 	GetTaskByID(context.Context, string) (*data.Task, error)
+	GetTasksByUserID(context.Context, data.Filter, *Pagination) ([]*data.Task, error)
 }
 
 type Deleter interface {

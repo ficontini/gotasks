@@ -11,7 +11,7 @@ type Task struct {
 	Description string    `bson:"description,omitempty" json:"description,omitempty"`
 	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" json:"completed"`
-	Projects    []string  `bson:"projects" json:"-"`
+	AssignedTo  string    `bson:"assignedTo" json:"assignedTo,omitempty"`
 }
 
 type CreateTaskParams struct {
@@ -25,7 +25,6 @@ func NewTaskFromParams(params CreateTaskParams) *Task {
 		Title:       params.Title,
 		Description: params.Description,
 		DueDate:     params.DueDate,
-		Projects:    []string{},
 	}
 }
 func (params CreateTaskParams) Validate() map[string]string {
@@ -45,12 +44,22 @@ func isDateValid(date time.Time) bool {
 	return date.After(time.Now())
 }
 
-type UpdateTaskParams struct {
+type TaskCompletionRequest struct {
 	Completed bool
 }
 
-func (p UpdateTaskParams) ToMap() map[string]any {
+func (req TaskCompletionRequest) ToMap() map[string]any {
 	return map[string]any{
-		"completed": p.Completed,
+		"completed": req.Completed,
+	}
+}
+
+type TaskAssignmentRequest struct {
+	UserID string `json:"userID"`
+}
+
+func (req TaskAssignmentRequest) ToMap() map[string]any {
+	return map[string]any{
+		"assignedTo": req.UserID,
 	}
 }

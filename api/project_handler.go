@@ -43,12 +43,20 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
+	user, err := getAuthUser(c)
+	if err != nil {
+		return err
+	}
 	project, err := h.projectService.GetProjectByID(c.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrResourceNotFound) {
-			return ErrResourceNotFound("project")
+		if errors.Is(err, service.ErrProjectNotFound) {
+			return ErrResourceNotFound(err.Error())
 		}
 		return err
+	}
+
+	if project.UserID != user.ID {
+		return ErrUnAuthorized()
 	}
 	return c.JSON(project)
 }

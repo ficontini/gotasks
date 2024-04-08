@@ -43,14 +43,31 @@ func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
 	}
 	if err := h.userService.EnableUser(c.Context(), id); err != nil {
 		switch {
-		case errors.Is(err, service.ErrResourceNotFound):
-			return ErrResourceNotFound("user")
-		case errors.Is(err, service.ErrConflict):
+		case errors.Is(err, service.ErrUserNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrUserStateUnchanged):
+			return ErrConflict(err.Error())
+		default:
+			return err
+		}
+	}
+	return c.JSON(fiber.Map{"enabled": id})
+}
+func (h *UserHandler) HandleDisableUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	if err := h.userService.DisableUser(c.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrUserStateUnchanged):
 			return ErrConflict(err.Error())
 		default:
 			return err
 		}
 	}
 
-	return c.JSON(fiber.Map{"enabled": id})
+	return c.JSON(fiber.Map{"disabled": id})
 }

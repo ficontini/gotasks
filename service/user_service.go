@@ -35,27 +35,35 @@ func (svc *UserService) isEmailAlreadyInUse(ctx context.Context, email string) b
 	return user != nil
 }
 
-func (svc *UserService) EnableUser(ctx context.Context, id string) error {
+func (svc *UserService) setEnabled(ctx context.Context, id string, enabled bool) error {
 	user, err := svc.userStore.GetUserByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
-			return ErrResourceNotFound
+			return ErrUserNotFound
 		}
 	}
-	if user.Enabled {
-		return ErrConflict
+	if user.Enabled == enabled {
+		return ErrUserStateUnchanged
 	}
-	if err := svc.userStore.Update(ctx, id, db.Map{"enabled": true}); err != nil {
+	if err := svc.userStore.Update(ctx, id, db.Map{"enabled": enabled}); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
-			return ErrResourceNotFound
+			return ErrUserNotFound
 		}
 		return err
 	}
 	return nil
 }
 
+func (svc *UserService) EnableUser(ctx context.Context, id string) error {
+	return svc.setEnabled(ctx, id, true)
+}
+
+func (svc *UserService) DisableUser(ctx context.Context, id string) error {
+	return svc.setEnabled(ctx, id, false)
+}
+
 var (
-	ErrEmailAlreadyInUse = errors.New("email already in use")
-	ErrConflict          = errors.New("user is already enabled")
-	ErrResourceNotFound  = errors.New("resource not found")
+	ErrEmailAlreadyInUse  = errors.New("email already in use")
+	ErrUserStateUnchanged = errors.New("user state unchanged")
+	ErrUserNotFound       = errors.New("user resource not found")
 )

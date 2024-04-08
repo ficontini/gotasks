@@ -29,7 +29,6 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 		Description: description,
 		DueDate:     dueTo,
 		Completed:   completed,
-		Projects:    []string{},
 	}
 	insertedTask, err := store.Task.InsertTask(context.Background(), task)
 	if err != nil {
@@ -54,4 +53,10 @@ func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *data.U
 		log.Fatal(err)
 	}
 	return insertedUser
+}
+func AssignTaskToUser(store db.Store, taskID, userID string) {
+	if err := store.Task.SetTaskAssignee(context.Background(), taskID, data.TaskAssignmentRequest{UserID: userID}); err != nil {
+		log.Fatal(err)
+	}
+
 }

@@ -24,7 +24,7 @@ func main() {
 	}
 
 	var (
-		taskHandler    = api.NewTaskHandler(service.NewTaskService(store.Task))
+		taskHandler    = api.NewTaskHandler(service.NewTaskService(store))
 		userHandler    = api.NewUserHandler(*service.NewUserService(store.User))
 		authHandler    = api.NewAuthHandler(store.User)
 		projectHandler = api.NewProjectHandler(service.NewProjectService(*store))
@@ -39,12 +39,16 @@ func main() {
 
 	//admin tasks
 	admin.Post("/user/:id/enable", userHandler.HandleEnableUser)
-	admin.Delete("task/:id", taskHandler.HandleDeleteTask)
+	admin.Post("/user/:id/disable", userHandler.HandleDisableUser)
+	admin.Post("/task/:id/assign", taskHandler.HandleAssignTaskToUser)
+	admin.Delete("/task/:id", taskHandler.HandleDeleteTask)
+	admin.Get("/task", taskHandler.HandleGetTasks)
 
-	apiv1.Get("/task", taskHandler.HandleGetTasks)
+	apiv1.Get("/task", taskHandler.HandleGetUserTaks)
 	apiv1.Post("/task", taskHandler.HandlePostTask)
-	apiv1.Get("task/:id", taskHandler.HandleGetTask)
-	apiv1.Post("task/:id/complete", taskHandler.HandleCompleteTask)
+	apiv1.Get("/task/:id", taskHandler.HandleGetTask)
+	apiv1.Post("/task/:id/assign/me", taskHandler.HandleAssignTaskToSelf)
+	apiv1.Post("/task/:id/complete", taskHandler.HandleCompleteTask)
 
 	apiv1.Post("/project", projectHandler.HandlePostProject)
 	apiv1.Get("/project/:id", projectHandler.HandleGetProject)

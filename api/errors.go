@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -38,8 +37,8 @@ func ErrBadRequest() Error {
 func ErrBadRequestCustomMessage(msg string) Error {
 	return NewError(http.StatusBadRequest, msg)
 }
-func ErrResourceNotFound(resource string) Error {
-	return NewError(http.StatusNotFound, fmt.Sprintf("%s resource not found", resource))
+func ErrResourceNotFound(msg string) Error {
+	return NewError(http.StatusNotFound, msg)
 }
 func ErrUnAuthorized() Error {
 	return NewError(http.StatusUnauthorized, "unathorized request")
