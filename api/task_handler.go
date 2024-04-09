@@ -34,7 +34,7 @@ func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	return c.JSON(task)
 }
 func (h *TaskHandler) HandleGetUserTasks(c *fiber.Ctx) error {
-	user, err := getAuthUser(c)
+	auth, err := getAuth(c)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (h *TaskHandler) HandleGetUserTasks(c *fiber.Ctx) error {
 	if err := c.QueryParser(&params); err != nil {
 		return ErrBadRequest()
 	}
-	tasks, err := h.taskService.GetTasksByUserID(c.Context(), user.ID, params)
+	tasks, err := h.taskService.GetTasksByUserID(c.Context(), auth.UserID, params)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) HandlePostTask(c *fiber.Ctx) error {
-	var params types.CreateTaskParams
+	var params types.NewTaskParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
@@ -82,11 +82,11 @@ func (h *TaskHandler) HandleCompleteTask(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	user, err := getAuthUser(c)
+	auth, err := getAuth(c)
 	if err != nil {
 		return err
 	}
-	if err := h.taskService.CompleteTask(c.Context(), id, user.ID); err != nil {
+	if err := h.taskService.CompleteTask(c.Context(), id, auth.UserID); err != nil {
 		switch {
 		case errors.Is(err, service.ErrUnAuthorized):
 			return ErrUnAuthorized()
@@ -120,12 +120,12 @@ func (h *TaskHandler) HandleAssignTaskToSelf(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	user, err := getAuthUser(c)
+	auth, err := getAuth(c)
 	if err != nil {
 		return err
 	}
 	req := types.TaskAssignmentRequest{
-		UserID: user.ID,
+		UserID: auth.UserID,
 	}
 	if err := h.taskService.AssignTaskToSelf(c.Context(), id, req); err != nil {
 		if errors.Is(err, service.ErrTaskNotFound) {

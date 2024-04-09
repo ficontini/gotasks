@@ -22,15 +22,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	var (
-		taskHandler    = api.NewTaskHandler(service.NewTaskService(store))
-		userHandler    = api.NewUserHandler(*service.NewUserService(store.User))
-		authHandler    = api.NewAuthHandler(store.User)
-		projectHandler = api.NewProjectHandler(service.NewProjectService(*store))
+		svc            = service.NewService(store)
+		taskHandler    = api.NewTaskHandler(svc.Task)
+		userHandler    = api.NewUserHandler(svc.User)
+		authHandler    = api.NewAuthHandler(svc.Auth)
+		projectHandler = api.NewProjectHandler(svc.Project)
 		app            = fiber.New(config)
 		auth           = app.Group("/api")
-		apiv1          = app.Group("/api/v1", api.JWTAuthentication(store.User))
+		apiv1          = app.Group("/api/v1", api.JWTAuthentication(service.NewAuthService(store)))
 		admin          = apiv1.Group("/admin", api.AdminAuth)
 	)
 

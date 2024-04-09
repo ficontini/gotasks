@@ -9,16 +9,16 @@ import (
 )
 
 type ProjectService struct {
-	store db.Store
+	store *db.Store
 }
 
-func NewProjectService(store db.Store) *ProjectService {
+func NewProjectService(store *db.Store) *ProjectService {
 	return &ProjectService{
 		store: store,
 	}
 }
 
-func (svc *ProjectService) CreateProject(ctx context.Context, params types.CreateProjectParams, userID string) (*types.Project, error) {
+func (svc *ProjectService) CreateProject(ctx context.Context, params types.NewProjectParams, userID string) (*types.Project, error) {
 	project := types.NewProjectFromParams(params)
 	project.UserID = userID
 	return svc.store.Project.InsertProject(ctx, project)

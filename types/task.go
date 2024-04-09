@@ -14,20 +14,20 @@ type Task struct {
 	AssignedTo  string    `bson:"assignedTo" json:"assignedTo,omitempty"`
 }
 
-type CreateTaskParams struct {
+type NewTaskParams struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	DueDate     time.Time `json:"dueDate"`
 }
 
-func NewTaskFromParams(params CreateTaskParams) *Task {
+func NewTaskFromParams(params NewTaskParams) *Task {
 	return &Task{
 		Title:       params.Title,
 		Description: params.Description,
 		DueDate:     params.DueDate,
 	}
 }
-func (params CreateTaskParams) Validate() map[string]string {
+func (params NewTaskParams) Validate() map[string]string {
 	errors := map[string]string{}
 	if len(params.Title) < minDescriptionLen {
 		errors["title"] = fmt.Sprintf("Title length should be at least %d", minTitleLen)

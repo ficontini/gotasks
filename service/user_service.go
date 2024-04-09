@@ -9,12 +9,12 @@ import (
 )
 
 type UserService struct {
-	userStore db.UserStore
+	store *db.Store
 }
 
-func NewUserService(userStore db.UserStore) *UserService {
+func NewUserService(store *db.Store) *UserService {
 	return &UserService{
-		userStore: userStore,
+		store: store,
 	}
 }
 
@@ -26,17 +26,17 @@ func (svc *UserService) CreateUser(ctx context.Context, params types.CreateUserP
 	if err != nil {
 		return nil, err
 	}
-	return svc.userStore.InsertUser(ctx, user)
+	return svc.store.User.InsertUser(ctx, user)
 
 }
 
 func (svc *UserService) isEmailAlreadyInUse(ctx context.Context, email string) bool {
-	user, _ := svc.userStore.GetUserByEmail(ctx, email)
+	user, _ := svc.store.User.GetUserByEmail(ctx, email)
 	return user != nil
 }
 
 func (svc *UserService) setEnabled(ctx context.Context, id string, enabled bool) error {
-	user, err := svc.userStore.GetUserByID(ctx, id)
+	user, err := svc.store.User.GetUserByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrUserNotFound
@@ -45,7 +45,7 @@ func (svc *UserService) setEnabled(ctx context.Context, id string, enabled bool)
 	if user.Enabled == enabled {
 		return ErrUserStateUnchanged
 	}
-	if err := svc.userStore.Update(ctx, id, types.StatusUpdater{Enabled: enabled}); err != nil {
+	if err := svc.store.User.Update(ctx, id, types.StatusUpdater{Enabled: enabled}); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrUserNotFound
 		}
@@ -70,10 +70,19 @@ func (svc *UserService) ResetPassword(ctx context.Context, user *types.User, par
 	if err != nil {
 		return err
 	}
-	if err := svc.userStore.Update(ctx, user.ID, types.PasswordUpdater{EncryptedPassword: enpw}); err != nil {
+	if err := svc.store.User.Update(ctx, user.ID, types.PasswordUpdater{EncryptedPassword: enpw}); err != nil {
 		return err
 	}
-	//TODO: Invalidating existing token
+	return nil
+}
+func (svc *UserService) InvalidateJWT(ctx context.Context, auth *types.Auth) error {
+	filter := &types.AuthFilter{
+		UserID:   auth.UserID,
+		AuthUUID: auth.AuthUUID,
+	}
+	if err := svc.store.Auth.Delete(ctx, filter); err != nil {
+		return err
+	}
 	return nil
 }
 

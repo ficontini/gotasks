@@ -2,25 +2,21 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/service"
 	"github.com/ficontini/gotasks/types"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthHandler struct {
-	userStore db.UserStore
+	authService *service.AuthService
 }
 
-func NewAuthHandler(userStore db.UserStore) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	return &AuthHandler{
-		userStore: userStore,
+		authService: authService,
 	}
 }
 
@@ -32,37 +28,20 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	user, err := h.userStore.GetUserByEmail(c.Context(), params.Email)
+	auth, err := h.authService.AuthenticateUser(c.Context(), &params)
 	if err != nil {
-		if errors.Is(err, db.ErrorNotFound) {
+		switch {
+		case errors.Is(err, service.ErrInvalidCredentials):
 			return ErrInvalidCredentials()
+		case errors.Is(err, service.ErrForbidden):
+			return ErrForbidden()
+		default:
+			return err
 		}
-		return err
 	}
-	if !user.IsPasswordValid(params.Password) {
-		return ErrInvalidCredentials()
-	}
-	if !user.Enabled {
-		return ErrForbidden()
-	}
-	fmt.Println("authenticated -> ", user)
-	token := CreateTokenFromUser(user)
-	resp := types.AuthResponse{
+	token := h.authService.CreateTokenFromAuth(auth)
+	resp := &types.AuthResponse{
 		Token: token,
 	}
 	return c.JSON(resp)
-}
-
-func CreateTokenFromUser(user *types.User) string {
-	claims := jwt.MapClaims{
-		"id":  user.ID,
-		"exp": time.Now().Add(time.Hour * 4).Unix(),
-	}
-	secret := os.Getenv("JWT_SECRET")
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(secret))
-	if err != nil {
-		fmt.Println("failed to signed token with secret", err)
-	}
-	return tokenStr
 }

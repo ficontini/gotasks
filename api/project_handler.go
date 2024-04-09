@@ -20,18 +20,18 @@ func NewProjectHandler(projectService *service.ProjectService) *ProjectHandler {
 }
 
 func (h *ProjectHandler) HandlePostProject(c *fiber.Ctx) error {
-	var params types.CreateProjectParams
+	var params types.NewProjectParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	user, err := getAuthUser(c)
+	auth, err := getAuth(c)
 	if err != nil {
 		return ErrInternalServer()
 	}
-	insertedProject, err := h.projectService.CreateProject(c.Context(), params, user.ID)
+	insertedProject, err := h.projectService.CreateProject(c.Context(), params, auth.UserID)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	user, err := getAuthUser(c)
+	auth, err := getAuth(c)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 		return err
 	}
 
-	if project.UserID != user.ID {
+	if project.UserID != auth.UserID {
 		return ErrUnAuthorized()
 	}
 	return c.JSON(project)

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ficontini/gotasks/db/fixtures"
+	"github.com/ficontini/gotasks/service"
 	"github.com/ficontini/gotasks/types"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +23,8 @@ func TestAuthenticateSuccess(t *testing.T) {
 		password    = "supersecurepassword"
 		user        = fixtures.AddUser(db.Store, "james", "foo", password, false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		authHandler = NewAuthHandler(db.User)
+		authService = service.NewAuthService(db.Store)
+		authHandler = NewAuthHandler(authService)
 		params      = types.AuthParams{
 			Email:    user.Email,
 			Password: password,
@@ -53,7 +55,8 @@ func TestAuthenticateWrongWithPasswordFailure(t *testing.T) {
 	var (
 		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword", false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		authHandler = NewAuthHandler(db.User)
+		authService = service.NewAuthService(db.Store)
+		authHandler = NewAuthHandler(authService)
 		params      = types.AuthParams{
 			Email:    user.Email,
 			Password: "wrongpassword",

@@ -19,17 +19,19 @@ func TestPostProjectSuccess(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		apiv1          = app.Group("/", JWTAuthentication(db.User))
-		projectService = service.NewProjectService(*db.Store)
+		authService    = service.NewAuthService(db.Store)
+		apiv1          = app.Group("/", JWTAuthentication(authService))
+		projectService = service.NewProjectService(db.Store)
 		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
+		auth           = fixtures.AddAuth(db.Store, user.ID)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
-	params := types.CreateProjectParams{
+	params := types.NewProjectParams{
 		Title:       "test-project",
 		Description: "description of this project",
 	}
-	res, err := makePostRequest(params, user, app)
+	res, err := makePostRequest(params, authService, auth, app)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,31 +52,33 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		apiv1          = app.Group("/", JWTAuthentication(db.User))
-		projectService = service.NewProjectService(*db.Store)
+		authService    = service.NewAuthService(db.Store)
+		apiv1          = app.Group("/", JWTAuthentication(authService))
+		projectService = service.NewProjectService(db.Store)
 		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
+		auth           = fixtures.AddAuth(db.Store, user.ID)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
-	params := types.CreateProjectParams{
+	params := types.NewProjectParams{
 		Title:       "",
 		Description: "description of this project",
 	}
-	res, err := makePostRequest(params, user, app)
+	res, err := makePostRequest(params, authService, auth, app)
 	if err != nil {
 		t.Fatal(err)
 	}
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
 
-func makePostRequest(params interface{}, user *types.User, app *fiber.App) (*http.Response, error) {
+func makePostRequest(params interface{}, authService *service.AuthService, auth *types.Auth, app *fiber.App) (*http.Response, error) {
 	b, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(b))
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", CreateTokenFromUser(user)))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", authService.CreateTokenFromAuth(auth)))
 	req.Header.Add("Content-Type", "application/json")
 
 	return app.Test(req)

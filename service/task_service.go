@@ -28,7 +28,7 @@ func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*types.Task
 	}
 	return task, nil
 }
-func (svc *TaskService) CreateTask(ctx context.Context, params types.CreateTaskParams) (*types.Task, error) {
+func (svc *TaskService) CreateTask(ctx context.Context, params types.NewTaskParams) (*types.Task, error) {
 	task := types.NewTaskFromParams(params)
 	insertedTask, err := svc.store.Task.InsertTask(ctx, task)
 	return insertedTask, err

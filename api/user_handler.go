@@ -13,9 +13,9 @@ type UserHandler struct {
 	userService service.UserService
 }
 
-func NewUserHandler(userService service.UserService) *UserHandler {
+func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{
-		userService: userService,
+		userService: *userService,
 	}
 }
 
@@ -72,7 +72,11 @@ func (h *UserHandler) HandleDisableUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"disabled": id})
 }
 func (h *UserHandler) HandleResetPassword(c *fiber.Ctx) error {
-	user, err := getAuthUser(c)
+	user, err := getUserAuth(c)
+	if err != nil {
+		return err
+	}
+	auth, err := getAuth(c)
 	if err != nil {
 		return err
 	}
@@ -84,6 +88,9 @@ func (h *UserHandler) HandleResetPassword(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
 	if err := h.userService.ResetPassword(c.Context(), user, params); err != nil {
+		return err
+	}
+	if err := h.userService.InvalidateJWT(c.Context(), auth); err != nil {
 		return err
 	}
 	return c.JSON(fiber.Map{"password": "updated"})

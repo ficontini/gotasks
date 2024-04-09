@@ -19,19 +19,19 @@ func (project *Project) ContainsTask(taskID string) bool {
 	return false
 }
 
-type CreateProjectParams struct {
+type NewProjectParams struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-func NewProjectFromParams(params CreateProjectParams) *Project {
+func NewProjectFromParams(params NewProjectParams) *Project {
 	return &Project{
 		Title:       params.Title,
 		Description: params.Description,
 		Tasks:       []string{},
 	}
 }
-func (params CreateProjectParams) Validate() map[string]string {
+func (params NewProjectParams) Validate() map[string]string {
 	errors := map[string]string{}
 	if len(params.Title) < minTitleLen {
 		errors["title"] = fmt.Sprintf("Title length should be at least %d", minTitleLen)

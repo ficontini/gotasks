@@ -1,6 +1,28 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/twinj/uuid"
+)
+
+type Auth struct {
+	ID       string `bson:"_id"`
+	UserID   string `bson:"userID"`
+	AuthUUID string `bson:"authUUID"`
+}
+
+func NewAuth(userID string) *Auth {
+	return &Auth{
+		UserID:   userID,
+		AuthUUID: uuid.NewV4().String(),
+	}
+}
+
+type AuthFilter struct {
+	UserID   string
+	AuthUUID string
+}
 
 type AuthParams struct {
 	Email    string `json:"email"`

@@ -54,6 +54,14 @@ func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *types.
 	}
 	return insertedUser
 }
+func AddAuth(store *db.Store, userID string) *types.Auth {
+	auth := types.NewAuth(userID)
+	insertedAuth, err := store.Auth.Insert(context.Background(), auth)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return insertedAuth
+}
 func AssignTaskToUser(store db.Store, taskID, userID string) {
 	if err := store.Task.SetTaskAssignee(context.Background(), taskID, types.TaskAssignmentRequest{UserID: userID}); err != nil {
 		log.Fatal(err)

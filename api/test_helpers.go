@@ -44,6 +44,7 @@ func setup(t *testing.T) *testdb {
 			Task:    taskStore,
 			User:    db.NewMongoUserStore(client),
 			Project: db.NewMongoProjectStore(client, taskStore),
+			Auth:    db.NewMongoAuthStore(client),
 		},
 	}
 }
