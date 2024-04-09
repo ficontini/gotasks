@@ -23,8 +23,8 @@ var (
 )
 
 type Store struct {
-	User    UserStore
 	Auth    AuthStore
+	User    UserStore
 	Task    TaskStore
 	Project ProjectStore
 }
@@ -39,8 +39,8 @@ func NewMongoStore() (*Store, error) {
 	}
 	taskStore := NewMongoTaskStore(client)
 	return &Store{
-		User:    NewMongoUserStore(client),
 		Auth:    NewMongoAuthStore(client),
+		User:    NewMongoUserStore(client),
 		Task:    taskStore,
 		Project: NewMongoProjectStore(client, taskStore),
 	}, nil
