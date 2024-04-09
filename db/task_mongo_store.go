@@ -90,7 +90,7 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Tas
 }
 func (s *MongoTaskStore) GetTasks(ctx context.Context, filter types.Filter, pagination *Pagination) ([]*types.Task, error) {
 	opts := pagination.getOptions()
-	cur, err := s.coll.Find(ctx, filter.Apply(), opts)
+	cur, err := s.coll.Find(ctx, filter.ToBSON(), opts)
 	if err != nil {
 		return nil, err
 	}
