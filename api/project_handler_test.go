@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db/fixtures"
 	"github.com/ficontini/gotasks/service"
+	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -25,7 +25,7 @@ func TestPostProjectSuccess(t *testing.T) {
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
-	params := data.CreateProjectParams{
+	params := types.CreateProjectParams{
 		Title:       "test-project",
 		Description: "description of this project",
 	}
@@ -56,7 +56,7 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 		user           = fixtures.AddUser(db.Store, "james", "foo", "supersecure", false, true)
 	)
 	apiv1.Post("/", projectHandler.HandlePostProject)
-	params := data.CreateProjectParams{
+	params := types.CreateProjectParams{
 		Title:       "",
 		Description: "description of this project",
 	}
@@ -67,7 +67,7 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
 
-func makePostRequest(params interface{}, user *data.User, app *fiber.App) (*http.Response, error) {
+func makePostRequest(params interface{}, user *types.User, app *fiber.App) (*http.Response, error) {
 	b, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
@@ -79,8 +79,8 @@ func makePostRequest(params interface{}, user *data.User, app *fiber.App) (*http
 
 	return app.Test(req)
 }
-func decodeToProject(response *http.Response) *data.Project {
-	var project *data.Project
+func decodeToProject(response *http.Response) *types.Project {
+	var project *types.Project
 	json.NewDecoder(response.Body).Decode(&project)
 	return project
 }

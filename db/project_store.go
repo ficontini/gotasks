@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,8 +13,8 @@ import (
 const projectColl = "projects"
 
 type ProjectStore interface {
-	GetProjectByID(context.Context, string) (*data.Project, error)
-	InsertProject(context.Context, *data.Project) (*data.Project, error)
+	GetProjectByID(context.Context, string) (*types.Project, error)
+	InsertProject(context.Context, *types.Project) (*types.Project, error)
 }
 
 type MongoProjectStore struct {
@@ -30,7 +30,7 @@ func NewMongoProjectStore(client *mongo.Client, taskStore TaskStore) *MongoProje
 		TaskStore: taskStore,
 	}
 }
-func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Project) (*data.Project, error) {
+func (s *MongoProjectStore) InsertProject(ctx context.Context, project *types.Project) (*types.Project, error) {
 	res, err := s.coll.InsertOne(ctx, project)
 	if err != nil {
 		return nil, ErrInvalidID
@@ -38,12 +38,12 @@ func (s *MongoProjectStore) InsertProject(ctx context.Context, project *data.Pro
 	project.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return project, nil
 }
-func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
+func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*types.Project, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	var project *data.Project
+	var project *types.Project
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&project); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound

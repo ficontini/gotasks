@@ -44,11 +44,13 @@ func main() {
 	admin.Delete("/task/:id", taskHandler.HandleDeleteTask)
 	admin.Get("/task", taskHandler.HandleGetTasks)
 
-	apiv1.Get("/task", taskHandler.HandleGetUserTaks)
+	apiv1.Get("/task", taskHandler.HandleGetUserTasks)
 	apiv1.Post("/task", taskHandler.HandlePostTask)
 	apiv1.Get("/task/:id", taskHandler.HandleGetTask)
 	apiv1.Post("/task/:id/assign/me", taskHandler.HandleAssignTaskToSelf)
 	apiv1.Post("/task/:id/complete", taskHandler.HandleCompleteTask)
+
+	apiv1.Post("/user/reset-password", userHandler.HandleResetPassword)
 
 	apiv1.Post("/project", projectHandler.HandlePostProject)
 	apiv1.Get("/project/:id", projectHandler.HandleGetProject)

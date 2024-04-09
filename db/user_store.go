@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,10 +14,10 @@ import (
 const userColl = "users"
 
 type UserStore interface {
-	GetUserByID(context.Context, string) (*data.User, error)
-	GetUserByEmail(context.Context, string) (*data.User, error)
-	InsertUser(context.Context, *data.User) (*data.User, error)
-	Update(context.Context, string, Map) error
+	GetUserByID(context.Context, string) (*types.User, error)
+	GetUserByEmail(context.Context, string) (*types.User, error)
+	InsertUser(context.Context, *types.User) (*types.User, error)
+	Update(context.Context, string, types.Update) error
 }
 
 type MongoUserStore struct {
@@ -32,8 +32,8 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 	}
 }
 
-func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*data.User, error) {
-	var user *data.User
+func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
+	var user *types.User
 	if err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -42,12 +42,12 @@ func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*dat
 	}
 	return user, nil
 }
-func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*data.User, error) {
+func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.User, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	var user *data.User
+	var user *types.User
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -56,7 +56,7 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*data.User
 	}
 	return user, nil
 }
-func (s *MongoUserStore) InsertUser(ctx context.Context, user *data.User) (*data.User, error) {
+func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
 	res, err := s.coll.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
@@ -64,13 +64,12 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *data.User) (*data
 	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return user, nil
 }
-func (s *MongoUserStore) Update(ctx context.Context, id string, params Map) error {
+func (s *MongoUserStore) Update(ctx context.Context, id string, update types.Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	update := bson.M{"$set": params}
-	res, err := s.coll.UpdateByID(ctx, oid, update)
+	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
 	if err != nil {
 		return err
 	}

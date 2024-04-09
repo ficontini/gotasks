@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/service"
+	"github.com/ficontini/gotasks/types"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -33,7 +33,7 @@ func (h *TaskHandler) HandleGetTask(c *fiber.Ctx) error {
 	}
 	return c.JSON(task)
 }
-func (h *TaskHandler) HandleGetUserTaks(c *fiber.Ctx) error {
+func (h *TaskHandler) HandleGetUserTasks(c *fiber.Ctx) error {
 	user, err := getAuthUser(c)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (h *TaskHandler) HandleGetTasks(c *fiber.Ctx) error {
 }
 
 func (h *TaskHandler) HandlePostTask(c *fiber.Ctx) error {
-	var params data.CreateTaskParams
+	var params types.CreateTaskParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
@@ -124,10 +124,10 @@ func (h *TaskHandler) HandleAssignTaskToSelf(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	req := data.TaskAssignmentRequest{
+	req := types.TaskAssignmentRequest{
 		UserID: user.ID,
 	}
-	if err := h.taskService.AssignMeTask(c.Context(), id, req); err != nil {
+	if err := h.taskService.AssignTaskToSelf(c.Context(), id, req); err != nil {
 		if errors.Is(err, service.ErrTaskNotFound) {
 			return ErrResourceNotFound(err.Error())
 		}
@@ -140,7 +140,7 @@ func (h *TaskHandler) HandleAssignTaskToUser(c *fiber.Ctx) error {
 	if len(id) == 0 {
 		return ErrInvalidID()
 	}
-	var req data.TaskAssignmentRequest
+	var req types.TaskAssignmentRequest
 	if err := c.BodyParser(&req); err != nil {
 		return ErrBadRequest()
 	}

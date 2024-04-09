@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 
-	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/types"
 )
 
 const taskColl = "tasks"
 
 type TaskStore interface {
-	InsertTask(context.Context, *data.Task) (*data.Task, error)
+	InsertTask(context.Context, *types.Task) (*types.Task, error)
 	TaskUpdater
 	TaskGetter
 	Deleter
@@ -17,13 +17,12 @@ type TaskStore interface {
 
 type TaskUpdater interface {
 	//Update(context.Context, string, Map) error
-	SetTaskAsComplete(context.Context, string, data.TaskCompletionRequest) error
-	SetTaskAssignee(context.Context, string, data.TaskAssignmentRequest) error
+	SetTaskAsComplete(context.Context, string, types.TaskCompletionRequest) error
+	SetTaskAssignee(context.Context, string, types.TaskAssignmentRequest) error
 }
 type TaskGetter interface {
-	GetTasks(context.Context, data.Filter, *Pagination) ([]*data.Task, error)
-	GetTaskByID(context.Context, string) (*data.Task, error)
-	GetTasksByUserID(context.Context, data.Filter, *Pagination) ([]*data.Task, error)
+	GetTasks(context.Context, types.Filter, *Pagination) ([]*types.Task, error)
+	GetTaskByID(context.Context, string) (*types.Task, error)
 }
 
 type Deleter interface {

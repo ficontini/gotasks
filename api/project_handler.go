@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/service"
+	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,7 +20,7 @@ func NewProjectHandler(projectService *service.ProjectService) *ProjectHandler {
 }
 
 func (h *ProjectHandler) HandlePostProject(c *fiber.Ctx) error {
-	var params data.CreateProjectParams
+	var params types.CreateProjectParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}

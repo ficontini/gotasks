@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
 func AdminAuth(c *fiber.Ctx) error {
-	user, ok := c.Context().UserValue("user").(*data.User)
+	user, ok := c.Context().UserValue("user").(*types.User)
 	if !ok {
 		return ErrUnAuthorized()
 	}

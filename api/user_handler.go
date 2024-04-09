@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/service"
+	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,7 +20,7 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
-	var params data.CreateUserParams
+	var params types.CreateUserParams
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
@@ -70,4 +70,21 @@ func (h *UserHandler) HandleDisableUser(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"disabled": id})
+}
+func (h *UserHandler) HandleResetPassword(c *fiber.Ctx) error {
+	user, err := getAuthUser(c)
+	if err != nil {
+		return err
+	}
+	var params types.ResetPasswordParams
+	if err := c.BodyParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	if errors := params.Validate(); len(errors) > 0 {
+		return c.Status(http.StatusBadRequest).JSON(errors)
+	}
+	if err := h.userService.ResetPassword(c.Context(), user, params); err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"password": "updated"})
 }

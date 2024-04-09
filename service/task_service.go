@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/types"
 )
 
 type TaskService struct {
@@ -18,7 +18,7 @@ func NewTaskService(store *db.Store) *TaskService {
 	}
 }
 
-func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
+func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*types.Task, error) {
 	task, err := svc.store.Task.GetTaskByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
@@ -28,8 +28,8 @@ func (svc *TaskService) GetTaskByID(ctx context.Context, id string) (*data.Task,
 	}
 	return task, nil
 }
-func (svc *TaskService) CreateTask(ctx context.Context, params data.CreateTaskParams) (*data.Task, error) {
-	task := data.NewTaskFromParams(params)
+func (svc *TaskService) CreateTask(ctx context.Context, params types.CreateTaskParams) (*types.Task, error) {
+	task := types.NewTaskFromParams(params)
 	insertedTask, err := svc.store.Task.InsertTask(ctx, task)
 	return insertedTask, err
 }
@@ -39,21 +39,16 @@ type TaskQueryParams struct {
 	Completed *bool
 }
 
-// TODO: review
-func createCompletionFilter(completed *bool) data.Filter {
-	if completed != nil {
-		return data.CompletionFilter{Completed: *completed}
-	} else {
-		return data.NoFilter{}
-	}
-}
-func (svc *TaskService) GetTasks(ctx context.Context, params *TaskQueryParams) ([]*data.Task, error) {
-	return svc.store.Task.GetTasks(ctx, createCompletionFilter(params.Completed), &params.Pagination)
+func (svc *TaskService) GetTasks(ctx context.Context, params *TaskQueryParams) ([]*types.Task, error) {
+	return svc.store.Task.GetTasks(ctx, types.NewCompletedFilter(params.Completed), &params.Pagination)
 }
 
-func (svc *TaskService) GetTasksByUserID(ctx context.Context, id string, params TaskQueryParams) ([]*data.Task, error) {
-	filter := data.AssignationFilter{AssignedTo: id}
-	return svc.store.Task.GetTasksByUserID(ctx, filter, &params.Pagination)
+func (svc *TaskService) GetTasksByUserID(ctx context.Context, id string, params TaskQueryParams) ([]*types.Task, error) {
+	filter, err := types.NewUserTasksFilter(params.Completed, id)
+	if err != nil {
+		return nil, err
+	}
+	return svc.store.Task.GetTasks(ctx, filter, &params.Pagination)
 }
 func (svc *TaskService) DeleteTask(ctx context.Context, id string) error {
 	if err := svc.store.Task.Delete(ctx, id); err != nil {
@@ -76,12 +71,12 @@ func (svc *TaskService) CompleteTask(ctx context.Context, id, userID string) err
 	if task.Completed {
 		return ErrTaskAlreadyCompleted
 	}
-	params := data.TaskCompletionRequest{
+	params := types.TaskCompletionRequest{
 		Completed: true,
 	}
 	return svc.store.Task.SetTaskAsComplete(ctx, id, params)
 }
-func (svc *TaskService) getTask(ctx context.Context, id string) (*data.Task, error) {
+func (svc *TaskService) getTask(ctx context.Context, id string) (*types.Task, error) {
 	task, err := svc.store.Task.GetTaskByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
@@ -91,10 +86,10 @@ func (svc *TaskService) getTask(ctx context.Context, id string) (*data.Task, err
 	}
 	return task, nil
 }
-func (svc *TaskService) AssignMeTask(ctx context.Context, id string, req data.TaskAssignmentRequest) error {
+func (svc *TaskService) AssignTaskToSelf(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
 	return svc.assignTask(ctx, id, req)
 }
-func (svc *TaskService) AssignTaskToUser(ctx context.Context, id string, req data.TaskAssignmentRequest) error {
+func (svc *TaskService) AssignTaskToUser(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
 	if _, err := svc.store.User.GetUserByID(ctx, req.UserID); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrUserNotFound
@@ -102,7 +97,7 @@ func (svc *TaskService) AssignTaskToUser(ctx context.Context, id string, req dat
 	}
 	return svc.assignTask(ctx, id, req)
 }
-func (svc *TaskService) assignTask(ctx context.Context, id string, req data.TaskAssignmentRequest) error {
+func (svc *TaskService) assignTask(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
 	if err := svc.store.Task.SetTaskAssignee(ctx, id, req); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrTaskNotFound
@@ -110,6 +105,7 @@ func (svc *TaskService) assignTask(ctx context.Context, id string, req data.Task
 		return err
 	}
 	return nil
+
 }
 
 var (

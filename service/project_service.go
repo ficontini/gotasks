@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/types"
 )
 
 type ProjectService struct {
@@ -18,13 +18,13 @@ func NewProjectService(store db.Store) *ProjectService {
 	}
 }
 
-func (svc *ProjectService) CreateProject(ctx context.Context, params data.CreateProjectParams, userID string) (*data.Project, error) {
-	project := data.NewProjectFromParams(params)
+func (svc *ProjectService) CreateProject(ctx context.Context, params types.CreateProjectParams, userID string) (*types.Project, error) {
+	project := types.NewProjectFromParams(params)
 	project.UserID = userID
 	return svc.store.Project.InsertProject(ctx, project)
 }
 
-func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*data.Project, error) {
+func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*types.Project, error) {
 	project, err := svc.store.Project.GetProjectByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, db.ErrorNotFound) {

@@ -6,12 +6,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/ficontini/gotasks/data"
 	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/types"
 )
 
-func AddProject(store *db.Store, title, description string, userID string, tasks []string) *data.Project {
-	project := &data.Project{
+func AddProject(store *db.Store, title, description string, userID string, tasks []string) *types.Project {
+	project := &types.Project{
 		Title:       title,
 		Description: description,
 		UserID:      userID,
@@ -23,8 +23,8 @@ func AddProject(store *db.Store, title, description string, userID string, tasks
 	}
 	return insertedProject
 }
-func AddTask(store *db.Store, title, description string, dueTo time.Time, completed bool) *data.Task {
-	task := &data.Task{
+func AddTask(store *db.Store, title, description string, dueTo time.Time, completed bool) *types.Task {
+	task := &types.Task{
 		Title:       title,
 		Description: description,
 		DueDate:     dueTo,
@@ -36,8 +36,8 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 	}
 	return insertedTask
 }
-func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *data.User {
-	user, err := data.NewUserFromParams(data.CreateUserParams{
+func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *types.User {
+	user, err := types.NewUserFromParams(types.CreateUserParams{
 		FirstName: fn,
 		LastName:  ln,
 		Email:     fmt.Sprintf("%s@%s.com", fn, ln),
@@ -55,7 +55,7 @@ func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *data.U
 	return insertedUser
 }
 func AssignTaskToUser(store db.Store, taskID, userID string) {
-	if err := store.Task.SetTaskAssignee(context.Background(), taskID, data.TaskAssignmentRequest{UserID: userID}); err != nil {
+	if err := store.Task.SetTaskAssignee(context.Background(), taskID, types.TaskAssignmentRequest{UserID: userID}); err != nil {
 		log.Fatal(err)
 	}
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ficontini/gotasks/data"
+	"github.com/ficontini/gotasks/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,7 +22,7 @@ func NewMongoTaskStore(client *mongo.Client) *MongoTaskStore {
 		coll:   client.Database(DBNAME).Collection(taskColl),
 	}
 }
-func (s *MongoTaskStore) InsertTask(ctx context.Context, task *data.Task) (*data.Task, error) {
+func (s *MongoTaskStore) InsertTask(ctx context.Context, task *types.Task) (*types.Task, error) {
 	res, err := s.coll.InsertOne(ctx, task)
 	if err != nil {
 		return nil, err
@@ -31,11 +31,11 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *data.Task) (*data
 	return task, nil
 }
 
-func (s *MongoTaskStore) SetTaskAsComplete(ctx context.Context, id string, params data.TaskCompletionRequest) error {
+func (s *MongoTaskStore) SetTaskAsComplete(ctx context.Context, id string, params types.TaskCompletionRequest) error {
 	update := bson.M{"$set": params.ToMap()}
 	return s.update(ctx, id, update)
 }
-func (s *MongoTaskStore) SetTaskAssignee(ctx context.Context, id string, req data.TaskAssignmentRequest) error {
+func (s *MongoTaskStore) SetTaskAssignee(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
 	oid, err := primitive.ObjectIDFromHex(req.UserID)
 	if err != nil {
 		return err
@@ -74,12 +74,12 @@ func (s *MongoTaskStore) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
-func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*data.Task, error) {
+func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Task, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	var task *data.Task
+	var task *types.Task
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&task); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
@@ -88,23 +88,15 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*data.Task
 	}
 	return task, nil
 }
-func (s *MongoTaskStore) GetTasks(ctx context.Context, filter data.Filter, pagination *Pagination) ([]*data.Task, error) {
+func (s *MongoTaskStore) GetTasks(ctx context.Context, filter types.Filter, pagination *Pagination) ([]*types.Task, error) {
 	opts := pagination.getOptions()
-	cur, err := s.coll.Find(ctx, filter, opts)
+	cur, err := s.coll.Find(ctx, filter.Apply(), opts)
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*data.Task
+	var tasks []*types.Task
 	if err := cur.All(ctx, &tasks); err != nil {
 		return nil, err
 	}
 	return tasks, err
-}
-func (s *MongoTaskStore) GetTasksByUserID(ctx context.Context, filter data.Filter, pagination *Pagination) ([]*data.Task, error) {
-	oid, err := primitive.ObjectIDFromHex(filter.(data.AssignationFilter).AssignedTo)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.GetTasks(ctx, Map{"assignedTo": oid}, pagination)
 }
