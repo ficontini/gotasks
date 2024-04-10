@@ -44,22 +44,7 @@ func isDateValid(date time.Time) bool {
 	return date.After(time.Now())
 }
 
-type TaskCompletionRequest struct {
-	Completed bool
-}
-
-func (req TaskCompletionRequest) ToMap() map[string]any {
-	return map[string]any{
-		"completed": req.Completed,
-	}
-}
-
-type TaskAssignmentRequest struct {
+type UpdateTaskRequest struct {
+	TaskID string
 	UserID string `json:"userID"`
-}
-
-func (req TaskAssignmentRequest) ToMap() map[string]any {
-	return map[string]any{
-		"assignedTo": req.UserID,
-	}
 }

@@ -17,7 +17,7 @@ type UserStore interface {
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
-	Update(context.Context, string, types.Update) error
+	Update(context.Context, string, Update) error
 }
 
 type MongoUserStore struct {
@@ -64,7 +64,7 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*typ
 	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return user, nil
 }
-func (s *MongoUserStore) Update(ctx context.Context, id string, update types.Update) error {
+func (s *MongoUserStore) Update(ctx context.Context, id string, update Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err

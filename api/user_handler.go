@@ -88,10 +88,21 @@ func (h *UserHandler) HandleResetPassword(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
 	if err := h.userService.ResetPassword(c.Context(), user, params); err != nil {
+		if errors.Is(err, service.ErrCurrentPassword) {
+			return ErrUnAuthorized()
+		}
 		return err
 	}
 	if err := h.userService.InvalidateJWT(c.Context(), auth); err != nil {
 		return err
 	}
 	return c.JSON(fiber.Map{"password": "updated"})
+}
+func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
+	user, err := getUserAuth(c)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(user)
 }

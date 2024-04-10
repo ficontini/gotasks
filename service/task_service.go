@@ -40,11 +40,11 @@ type TaskQueryParams struct {
 }
 
 func (svc *TaskService) GetTasks(ctx context.Context, params *TaskQueryParams) ([]*types.Task, error) {
-	return svc.store.Task.GetTasks(ctx, types.NewCompletedFilter(params.Completed), &params.Pagination)
+	return svc.store.Task.GetTasks(ctx, db.NewCompletedFilter(params.Completed), &params.Pagination)
 }
 
 func (svc *TaskService) GetTasksByUserID(ctx context.Context, id string, params TaskQueryParams) ([]*types.Task, error) {
-	filter, err := types.NewUserTasksFilter(params.Completed, id)
+	filter, err := db.NewUserTasksFilter(params.Completed, id)
 	if err != nil {
 		return nil, err
 	}
@@ -59,22 +59,20 @@ func (svc *TaskService) DeleteTask(ctx context.Context, id string) error {
 	}
 	return nil
 }
-func (svc *TaskService) CompleteTask(ctx context.Context, id, userID string) error {
-	task, err := svc.getTask(ctx, id)
+func (svc *TaskService) CompleteTask(ctx context.Context, params types.UpdateTaskRequest) error {
+	task, err := svc.getTask(ctx, params.TaskID)
 	if err != nil {
 		return err
 	}
 
-	if task.AssignedTo != userID {
+	if task.AssignedTo != params.UserID {
 		return ErrUnAuthorized
 	}
 	if task.Completed {
 		return ErrTaskAlreadyCompleted
 	}
-	params := types.TaskCompletionRequest{
-		Completed: true,
-	}
-	return svc.store.Task.SetTaskAsComplete(ctx, id, params)
+	update := db.TaskCompleteUpdater{Completed: true}
+	return svc.store.Task.Update(ctx, task.ID, update)
 }
 func (svc *TaskService) getTask(ctx context.Context, id string) (*types.Task, error) {
 	task, err := svc.store.Task.GetTaskByID(ctx, id)
@@ -86,19 +84,23 @@ func (svc *TaskService) getTask(ctx context.Context, id string) (*types.Task, er
 	}
 	return task, nil
 }
-func (svc *TaskService) AssignTaskToSelf(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
-	return svc.assignTask(ctx, id, req)
+func (svc *TaskService) AssignTaskToSelf(ctx context.Context, req types.UpdateTaskRequest) error {
+	return svc.assignTask(ctx, req.TaskID, req.UserID)
 }
-func (svc *TaskService) AssignTaskToUser(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
+func (svc *TaskService) AssignTaskToUser(ctx context.Context, req types.UpdateTaskRequest) error {
 	if _, err := svc.store.User.GetUserByID(ctx, req.UserID); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrUserNotFound
 		}
 	}
-	return svc.assignTask(ctx, id, req)
+	return svc.assignTask(ctx, req.TaskID, req.UserID)
 }
-func (svc *TaskService) assignTask(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
-	if err := svc.store.Task.SetTaskAssignee(ctx, id, req); err != nil {
+func (svc *TaskService) assignTask(ctx context.Context, taskID, userID string) error {
+	update, err := db.NewTaskAssignationUpdater(userID)
+	if err != nil {
+		return err
+	}
+	if err := svc.store.Task.Update(ctx, taskID, update); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrTaskNotFound
 		}

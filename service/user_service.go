@@ -45,7 +45,7 @@ func (svc *UserService) setEnabled(ctx context.Context, id string, enabled bool)
 	if user.Enabled == enabled {
 		return ErrUserStateUnchanged
 	}
-	if err := svc.store.User.Update(ctx, id, types.StatusUpdater{Enabled: enabled}); err != nil {
+	if err := svc.store.User.Update(ctx, id, db.StatusUpdater{Enabled: enabled}); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrUserNotFound
 		}
@@ -70,7 +70,7 @@ func (svc *UserService) ResetPassword(ctx context.Context, user *types.User, par
 	if err != nil {
 		return err
 	}
-	if err := svc.store.User.Update(ctx, user.ID, types.PasswordUpdater{EncryptedPassword: enpw}); err != nil {
+	if err := svc.store.User.Update(ctx, user.ID, db.PasswordUpdater{EncryptedPassword: enpw}); err != nil {
 		return err
 	}
 	return nil

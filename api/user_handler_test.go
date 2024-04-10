@@ -1,14 +1,18 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/ficontini/gotasks/db/fixtures"
 	"github.com/ficontini/gotasks/service"
+	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -120,4 +124,81 @@ func TestDisableUserWithWrongID(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkStatusCode(t, http.StatusNotFound, res.StatusCode)
+}
+func TestResetPasswordSuccess(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+	var (
+		password    = "supersecurepwd"
+		newpassword = "newsupersecurepwd"
+		user        = fixtures.AddUser(db.Store, "james", "foo", password, false, true)
+		auth        = fixtures.AddAuth(db.Store, user.ID)
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		authService = service.NewAuthService(db.Store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		handler     = NewUserHandler(service.NewUserService(db.Store))
+		token       = authService.CreateTokenFromAuth(auth)
+	)
+	apiv1.Post("/reset-password", handler.HandleResetPassword)
+	params := types.ResetPasswordParams{
+		CurrentPassword: password,
+		NewPassword:     newpassword,
+	}
+	b, _ := json.Marshal(params)
+	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewReader(b))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	res, err := app.Test(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	checkStatusCode(t, http.StatusOK, res.StatusCode)
+
+	apiv1.Get("/user", handler.HandleGetUser)
+	req = httptest.NewRequest(http.MethodGet, "/user", nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	res, err = app.Test(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	checkStatusCode(t, http.StatusUnauthorized, res.StatusCode)
+}
+func TestResetPasswordWithWrongCurrentPassword(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+	var (
+		password    = "supersecurepwd"
+		newpassword = "newsupersecurepwd"
+		user        = fixtures.AddUser(db.Store, "james", "foo", password, false, true)
+		auth        = fixtures.AddAuth(db.Store, user.ID)
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		authService = service.NewAuthService(db.Store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		handler     = NewUserHandler(service.NewUserService(db.Store))
+		token       = authService.CreateTokenFromAuth(auth)
+	)
+	apiv1.Post("/reset-password", handler.HandleResetPassword)
+	params := types.ResetPasswordParams{
+		CurrentPassword: newpassword,
+		NewPassword:     newpassword,
+	}
+	b, _ := json.Marshal(params)
+	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewReader(b))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	res, err := app.Test(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	checkStatusCode(t, http.StatusUnauthorized, res.StatusCode)
+	apiv1.Get("/user", handler.HandleGetUser)
+	req = httptest.NewRequest(http.MethodGet, "/user", nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", token))
+	res, err = app.Test(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	checkStatusCode(t, http.StatusOK, res.StatusCode)
 }

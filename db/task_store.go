@@ -16,12 +16,10 @@ type TaskStore interface {
 }
 
 type TaskUpdater interface {
-	//Update(context.Context, string, Map) error
-	SetTaskAsComplete(context.Context, string, types.TaskCompletionRequest) error
-	SetTaskAssignee(context.Context, string, types.TaskAssignmentRequest) error
+	Update(context.Context, string, Update) error
 }
 type TaskGetter interface {
-	GetTasks(context.Context, types.Filter, *Pagination) ([]*types.Task, error)
+	GetTasks(context.Context, Filter, *Pagination) ([]*types.Task, error)
 	GetTaskByID(context.Context, string) (*types.Task, error)
 }
 

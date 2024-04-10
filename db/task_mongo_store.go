@@ -31,26 +31,12 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *types.Task) (*typ
 	return task, nil
 }
 
-func (s *MongoTaskStore) SetTaskAsComplete(ctx context.Context, id string, params types.TaskCompletionRequest) error {
-	update := bson.M{"$set": params.ToMap()}
-	return s.update(ctx, id, update)
-}
-func (s *MongoTaskStore) SetTaskAssignee(ctx context.Context, id string, req types.TaskAssignmentRequest) error {
-	oid, err := primitive.ObjectIDFromHex(req.UserID)
-	if err != nil {
-		return err
-	}
-	params := req.ToMap()
-	params["assignedTo"] = oid
-	update := bson.M{"$set": params}
-	return s.update(ctx, id, update)
-}
-func (s *MongoTaskStore) update(ctx context.Context, id string, update bson.M) error {
+func (s *MongoTaskStore) Update(ctx context.Context, id string, update Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	res, err := s.coll.UpdateByID(ctx, oid, update)
+	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
 	if err != nil {
 		return err
 	}
@@ -88,7 +74,7 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Tas
 	}
 	return task, nil
 }
-func (s *MongoTaskStore) GetTasks(ctx context.Context, filter types.Filter, pagination *Pagination) ([]*types.Task, error) {
+func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
 	opts := pagination.getOptions()
 	cur, err := s.coll.Find(ctx, filter.ToBSON(), opts)
 	if err != nil {

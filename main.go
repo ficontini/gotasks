@@ -30,23 +30,26 @@ func main() {
 		admin   = apiv1.Group("/admin", api.AdminAuth)
 	)
 
+	//authentication
 	auth.Post("/auth", handler.Auth.HandleAuthenticate)
+
+	//user management
 	auth.Post("/user", handler.User.HandlePostUser)
+	apiv1.Post("/user/reset-password", handler.User.HandleResetPassword)
+	apiv1.Get("/user", handler.User.HandleGetUser)
 
-	//admin tasks
-	admin.Post("/user/:id/enable", handler.User.HandleEnableUser)
-	admin.Post("/user/:id/disable", handler.User.HandleDisableUser)
-	admin.Post("/task/:id/assign", handler.Task.HandleAssignTaskToUser)
-	admin.Delete("/task/:id", handler.Task.HandleDeleteTask)
-	admin.Get("/task", handler.Task.HandleGetTasks)
-
+	//task management
 	apiv1.Get("/task", handler.Task.HandleGetUserTasks)
 	apiv1.Post("/task", handler.Task.HandlePostTask)
 	apiv1.Get("/task/:id", handler.Task.HandleGetTask)
 	apiv1.Post("/task/:id/assign/me", handler.Task.HandleAssignTaskToSelf)
 	apiv1.Post("/task/:id/complete", handler.Task.HandleCompleteTask)
+	admin.Post("/task/:id/assign", handler.Task.HandleAssignTaskToUser)
+	admin.Delete("/task/:id", handler.Task.HandleDeleteTask)
+	admin.Get("/task", handler.Task.HandleGetTasks)
 
-	apiv1.Post("/user/reset-password", handler.User.HandleResetPassword)
+	admin.Post("/user/:id/enable", handler.User.HandleEnableUser)
+	admin.Post("/user/:id/disable", handler.User.HandleDisableUser)
 
 	apiv1.Post("/project", handler.Project.HandlePostProject)
 	apiv1.Get("/project/:id", handler.Project.HandleGetProject)

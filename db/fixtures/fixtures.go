@@ -63,7 +63,11 @@ func AddAuth(store *db.Store, userID string) *types.Auth {
 	return insertedAuth
 }
 func AssignTaskToUser(store db.Store, taskID, userID string) {
-	if err := store.Task.SetTaskAssignee(context.Background(), taskID, types.TaskAssignmentRequest{UserID: userID}); err != nil {
+	update, err := db.NewTaskAssignationUpdater(userID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := store.Task.Update(context.Background(), taskID, update); err != nil {
 		log.Fatal(err)
 	}
 
