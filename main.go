@@ -30,15 +30,12 @@ func main() {
 		admin   = apiv1.Group("/admin", api.AdminAuth)
 	)
 
-	//authentication
 	auth.Post("/auth", handler.Auth.HandleAuthenticate)
 
-	//user management
 	auth.Post("/user", handler.User.HandlePostUser)
 	apiv1.Post("/user/reset-password", handler.User.HandleResetPassword)
 	apiv1.Get("/user", handler.User.HandleGetUser)
 
-	//task management
 	apiv1.Get("/task", handler.Task.HandleGetUserTasks)
 	apiv1.Post("/task", handler.Task.HandlePostTask)
 	apiv1.Get("/task/:id", handler.Task.HandleGetTask)
@@ -48,6 +45,8 @@ func main() {
 	admin.Delete("/task/:id", handler.Task.HandleDeleteTask)
 	admin.Get("/task", handler.Task.HandleGetTasks)
 
+	admin.Get("/user", handler.User.HandleGetUsers)
+	admin.Get("/user/:id", handler.User.HandleAdminGetUser)
 	admin.Post("/user/:id/enable", handler.User.HandleEnableUser)
 	admin.Post("/user/:id/disable", handler.User.HandleDisableUser)
 

@@ -13,9 +13,13 @@ import (
 
 const userColl = "users"
 
-type UserStore interface {
+type UserGetter interface {
+	GetUsers(context.Context, Filter, Pagination) ([]*types.User, error)
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
+}
+type UserStore interface {
+	UserGetter
 	InsertUser(context.Context, *types.User) (*types.User, error)
 	Update(context.Context, string, Update) error
 }
@@ -77,4 +81,16 @@ func (s *MongoUserStore) Update(ctx context.Context, id string, update Update) e
 		return ErrorNotFound
 	}
 	return nil
+}
+func (s *MongoUserStore) GetUsers(ctx context.Context, filter Filter, pagination Pagination) ([]*types.User, error) {
+	opts := pagination.getOptions()
+	cur, err := s.coll.Find(ctx, filter.ToBSON(), opts)
+	if err != nil {
+		return nil, err
+	}
+	var users []*types.User
+	if err := cur.All(ctx, &users); err != nil {
+		return nil, err
+	}
+	return users, err
 }

@@ -106,3 +106,29 @@ func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
 
 	return c.JSON(user)
 }
+func (h *UserHandler) HandleAdminGetUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	user, err := h.userService.GetUserByID(c.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return ErrResourceNotFound(err.Error())
+		}
+		return err
+	}
+	return c.JSON(user)
+}
+func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
+	var params service.UserQueryParams
+	if err := c.QueryParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	users, err := h.userService.GetUsers(c.Context(), params)
+	if err != nil {
+		return err
+	}
+	resp := NewResourceResponse(users, len(users), params.Page)
+	return c.JSON(resp)
+}

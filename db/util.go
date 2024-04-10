@@ -11,8 +11,6 @@ const (
 	DEFAULT_LIMIT = 10
 )
 
-//type Map map[string]any
-
 type Pagination struct {
 	Page  int64
 	Limit int64

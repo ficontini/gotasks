@@ -86,6 +86,24 @@ func (svc *UserService) InvalidateJWT(ctx context.Context, auth *types.Auth) err
 	return nil
 }
 
+type UserQueryParams struct {
+	db.Pagination
+}
+
+func (svc *UserService) GetUsers(ctx context.Context, params UserQueryParams) ([]*types.User, error) {
+	return svc.store.User.GetUsers(ctx, db.EmptyFilter{}, params.Pagination)
+}
+func (svc *UserService) GetUserByID(ctx context.Context, id string) (*types.User, error) {
+	user, err := svc.store.User.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
 var (
 	ErrEmailAlreadyInUse  = errors.New("email already in use")
 	ErrUserStateUnchanged = errors.New("user state unchanged")
