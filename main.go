@@ -36,10 +36,11 @@ func main() {
 	apiv1.Post("/user/reset-password", handler.User.HandleResetPassword)
 	apiv1.Get("/user", handler.User.HandleGetUser)
 
+	apiv1.Get("/task/all", handler.Task.HandleGetTasks)
 	apiv1.Get("/task", handler.Task.HandleGetUserTasks)
 	apiv1.Post("/task", handler.Task.HandlePostTask)
 	apiv1.Get("/task/:id", handler.Task.HandleGetTask)
-	apiv1.Post("/task/:id/assign/me", handler.Task.HandleAssignTaskToSelf)
+	apiv1.Post("/task/:id/assign", handler.Task.HandleAssignTaskToSelf)
 	apiv1.Post("/task/:id/complete", handler.Task.HandleCompleteTask)
 	admin.Post("/task/:id/assign", handler.Task.HandleAssignTaskToUser)
 	admin.Delete("/task/:id", handler.Task.HandleDeleteTask)
@@ -47,8 +48,8 @@ func main() {
 
 	admin.Get("/user", handler.User.HandleGetUsers)
 	admin.Get("/user/:id", handler.User.HandleAdminGetUser)
-	admin.Post("/user/:id/enable", handler.User.HandleEnableUser)
-	admin.Post("/user/:id/disable", handler.User.HandleDisableUser)
+	admin.Put("/user/:id/enable", handler.User.HandleEnableUser)
+	admin.Put("/user/:id/disable", handler.User.HandleDisableUser)
 
 	apiv1.Post("/project", handler.Project.HandlePostProject)
 	apiv1.Get("/project/:id", handler.Project.HandleGetProject)

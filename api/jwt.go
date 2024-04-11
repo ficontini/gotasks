@@ -17,6 +17,7 @@ func JWTAuthentication(authService *service.AuthService) fiber.Handler {
 			return ErrUnAuthorized()
 		}
 		tokenStr := token[0]
+		fmt.Println("tokenStr", tokenStr)
 		claims, err := authService.ValidateToken(tokenStr[len("Bearer "):])
 		if err != nil {
 			return ErrUnAuthorized()
