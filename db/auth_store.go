@@ -33,11 +33,11 @@ func (s *MongoAuthStore) Insert(ctx context.Context, auth *types.Auth) (*types.A
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.coll.InsertOne(ctx, mAuth)
+	_, err = s.coll.InsertOne(ctx, mAuth)
 	if err != nil {
 		return nil, err
 	}
-	auth.ID = res.InsertedID.(primitive.ObjectID).Hex()
+	//auth.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return auth, err
 }
 

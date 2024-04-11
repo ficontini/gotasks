@@ -18,7 +18,7 @@ var (
 )
 
 func main() {
-	store, err := db.NewMongoStore()
+	store, err := db.NewStore()
 	if err != nil {
 		panic(err)
 	}

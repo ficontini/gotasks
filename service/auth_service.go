@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/types"
@@ -64,7 +63,7 @@ func (svc *AuthService) CreateTokenFromAuth(auth *types.Auth) string {
 	claims := jwt.MapClaims{
 		"id":        auth.UserID,
 		"auth_uuid": auth.AuthUUID,
-		"exp":       time.Now().Add(time.Hour * 4).Unix(),
+		"exp":       auth.ExpirationTime,
 	}
 	secret := os.Getenv("JWT_SECRET")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

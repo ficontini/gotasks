@@ -2,20 +2,22 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/twinj/uuid"
 )
 
 type Auth struct {
-	ID       string `bson:"_id"`
-	UserID   string `bson:"userID"`
-	AuthUUID string `bson:"authUUID"`
+	UserID         string `bson:"userID"`
+	AuthUUID       string `bson:"authUUID"`
+	ExpirationTime int64
 }
 
 func NewAuth(userID string) *Auth {
 	return &Auth{
-		UserID:   userID,
-		AuthUUID: uuid.NewV4().String(),
+		UserID:         userID,
+		AuthUUID:       uuid.NewV4().String(),
+		ExpirationTime: time.Now().Add(time.Hour * 4).Unix(),
 	}
 }
 
