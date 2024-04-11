@@ -5,22 +5,22 @@ Resources:
     Properties: 
       AttributeDefinitions: 
         - 
-          AttributeName: UserID
+          AttributeName: userID
           AttributeType: S
         - 
-          AttributeName: AuthUUID
+          AttributeName: authUUID
           AttributeType: S
       KeySchema: 
         - 
-          AttributeName: UserID
+          AttributeName: userID
           KeyType: HASH
         - 
-          AttributeName: AuthUUID
+          AttributeName: authUUID
           KeyType: RANGE
       ProvisionedThroughput: 
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
       TimeToLiveSpecification:
-        AttributeName: ExpirationTime
+        AttributeName: expirationTime
         Enabled: true
       TableName: auths

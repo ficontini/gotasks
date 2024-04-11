@@ -37,7 +37,6 @@ func (s *MongoAuthStore) Insert(ctx context.Context, auth *types.Auth) (*types.A
 	if err != nil {
 		return nil, err
 	}
-	//auth.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return auth, err
 }
 
@@ -68,9 +67,9 @@ func (s *MongoAuthStore) Delete(ctx context.Context, params *types.AuthFilter) e
 }
 
 type MongoAuth struct {
-	ID       string             `bson:"_id,omitempty"`
-	UserID   primitive.ObjectID `bson:"userID"`
-	AuthUUID string             `bson:"authUUID"`
+	UserID         primitive.ObjectID `bson:"userID"`
+	AuthUUID       string             `bson:"authUUID"`
+	ExpirationTime int64              `bson:"expirationTime"`
 }
 
 func newMongoAuth(auth *types.Auth) (*MongoAuth, error) {

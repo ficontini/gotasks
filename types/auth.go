@@ -8,9 +8,9 @@ import (
 )
 
 type Auth struct {
-	UserID         string `bson:"userID"`
-	AuthUUID       string `bson:"authUUID"`
-	ExpirationTime int64
+	UserID         string `bson:"userID" dynamodbav:"userID"`
+	AuthUUID       string `bson:"authUUID" dynamodbav:"authUUID"`
+	ExpirationTime int64  `bson:"expirationTime" dynamodbav:"expirationTime"`
 }
 
 func NewAuth(userID string) *Auth {
@@ -22,8 +22,8 @@ func NewAuth(userID string) *Auth {
 }
 
 type AuthFilter struct {
-	UserID   string
-	AuthUUID string
+	UserID   string `dynamodbav:"userID"`
+	AuthUUID string `dynamodbav:"authUUID"`
 }
 
 type AuthParams struct {
