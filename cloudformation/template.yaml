@@ -19,7 +19,7 @@ Resources:
         WriteCapacityUnits: 1
       GlobalSecondaryIndexes: 
       - 
-        IndexName: EmailGSI
+        IndexName: "EmailGSI"
         KeySchema: 
           - 
             AttributeName: email
@@ -30,3 +30,33 @@ Resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
       TableName: users
+  TaskTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: ID
+          AttributeType: S
+      KeySchema: 
+        - 
+          AttributeName: ID
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: tasks
+  ProjectTable: 
+      Type: AWS::DynamoDB::Table
+      Properties: 
+        AttributeDefinitions: 
+          - 
+            AttributeName: ID
+            AttributeType: S
+        KeySchema: 
+          - 
+            AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: projects 
