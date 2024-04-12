@@ -35,6 +35,7 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 			return ErrInvalidCredentials()
 		case errors.Is(err, service.ErrForbidden):
 			return ErrForbidden()
+
 		default:
 			return err
 		}

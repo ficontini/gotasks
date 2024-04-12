@@ -6,12 +6,12 @@ import (
 )
 
 type Task struct {
-	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
-	Title       string    `bson:"title" json:"title"`
-	Description string    `bson:"description,omitempty" json:"description,omitempty"`
-	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
-	Completed   bool      `bson:"completed" json:"completed"`
-	AssignedTo  string    `bson:"assignedTo" json:"assignedTo,omitempty"`
+	ID          string    `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
+	Title       string    `bson:"title" dynamodbav:"title" json:"title"`
+	Description string    `bson:"description,omitempty" dynamodbav:"description" json:"description,omitempty"`
+	DueDate     time.Time `bson:"dueDate" dynamodbav:"dueDate" json:"dueDate"`
+	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
+	AssignedTo  string    `bson:"assignedTo" dynamodbav:"assignedTo" json:"assignedTo,omitempty"`
 }
 
 type NewTaskParams struct {

@@ -43,7 +43,7 @@ func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
-	if err := db.SetupDBConfigFromEnv(); err != nil {
+	if err := db.SetupMongoConfigFromEnv(); err != nil {
 		log.Fatal(err)
 	}
 

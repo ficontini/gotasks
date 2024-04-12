@@ -96,11 +96,7 @@ func (svc *TaskService) AssignTaskToUser(ctx context.Context, req types.UpdateTa
 	return svc.assignTask(ctx, req.TaskID, req.UserID)
 }
 func (svc *TaskService) assignTask(ctx context.Context, taskID, userID string) error {
-	update, err := db.NewTaskAssignationUpdater(userID)
-	if err != nil {
-		return err
-	}
-	if err := svc.store.Task.Update(ctx, taskID, update); err != nil {
+	if err := svc.store.Task.Update(ctx, taskID, db.TaskAssignationUpdater{AssignedTo: userID}); err != nil {
 		if errors.Is(err, db.ErrorNotFound) {
 			return ErrTaskNotFound
 		}

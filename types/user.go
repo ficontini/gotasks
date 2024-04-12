@@ -15,13 +15,13 @@ const (
 )
 
 type User struct {
-	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string `bson:"firstName" json:"firstName"`
-	LastName          string `bson:"lastName" json:"lastName"`
-	Email             string `bson:"email" json:"email"`
-	EncryptedPassword string `bson:"encryptedPassword" json:"-"`
-	IsAdmin           bool   `bson:"isAdmin" json:"-"`
-	Enabled           bool   `bson:"enabled" json:"-"`
+	ID                string `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
+	FirstName         string `bson:"firstName" dynamodbav:"firstName" json:"firstName"`
+	LastName          string `bson:"lastName" dynamodbav:"lastName" json:"lastName"`
+	Email             string `bson:"email" dynamodbav:"email" json:"email"`
+	EncryptedPassword string `bson:"encryptedPassword" dynamodbav:"encryptedPassword" json:"-"`
+	IsAdmin           bool   `bson:"isAdmin" dynamodbav:"isAdmin" json:"-"`
+	Enabled           bool   `bson:"enabled" dynamodbav:"enabled" json:"-"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {

@@ -48,13 +48,6 @@ func setup(t *testing.T) *testdb {
 		},
 	}
 }
-
-func checkStatusCode(t *testing.T, expected, actual int) {
-	if actual != expected {
-		t.Fatalf("expected %d status code, but got %d", expected, actual)
-	}
-}
-
 func Init() error {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Fatal(err)
@@ -70,3 +63,40 @@ func Init() error {
 	}
 	return nil
 }
+
+func checkStatusCode(t *testing.T, expected, actual int) {
+	if actual != expected {
+		t.Fatalf("expected %d status code, but got %d", expected, actual)
+	}
+}
+
+// type testdb struct {
+// 	client *dynamodb.Client
+// 	*db.Store
+// }
+
+// func (tdb *testdb) teardown(t *testing.T) {
+
+// }
+// func setup(t *testing.T) *testdb {
+// 	if err := godotenv.Load("../.env"); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	if err := db.SetupDynamoDBConfigFromEnv(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(db.PROFILE))
+// 	if err != nil {
+// 		log.Fatalf("unable to load SDK config, %v", err)
+// 	}
+// 	client := dynamodb.NewFromConfig(cfg)
+// 	return &testdb{
+// 		client: client,
+// 		Store: &db.Store{
+// 			Auth:    db.NewDynamoDBAuthStore(client),
+// 			User:    db.NewDynamoDBUserStore(client),
+// 			Task:    db.NewDynamoDBTaskStore(client),
+// 			Project: db.NewDynamoDBProjectStore(client),
+// 		},
+// 	}
+// }

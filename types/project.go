@@ -3,11 +3,11 @@ package types
 import "fmt"
 
 type Project struct {
-	ID          string   `bson:"_id,omitempty" json:"id,omitempty"`
-	Title       string   `bson:"title" json:"title"`
-	Description string   `bson:"description" json:"description"`
-	UserID      string   `bson:"userID" json:"userID"`
-	Tasks       []string `bson:"tasks" json:"tasks"`
+	ID          string   `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
+	Title       string   `bson:"title" dynamodbav:"title" json:"title"`
+	Description string   `bson:"description" dynamodbav:"description" json:"description"`
+	UserID      string   `bson:"userID" dynamodbav:"userID" json:"userID"`
+	Tasks       []string `bson:"tasks" dynamodbav:"tasks" json:"tasks"`
 }
 
 func (project *Project) ContainsTask(taskID string) bool {

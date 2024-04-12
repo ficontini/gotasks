@@ -28,7 +28,6 @@ func JWTAuthentication(authService *service.AuthService) fiber.Handler {
 		}
 		c.Context().SetUserValue("user", user)
 		auth, err := authService.GetAuth(c.Context(), claims)
-		fmt.Println("auth", auth)
 		if err != nil {
 			return ErrUnAuthorized()
 		}
