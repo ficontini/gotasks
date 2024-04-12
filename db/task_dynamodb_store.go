@@ -99,6 +99,8 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 	}
 	return task, nil
 }
+
+// TODO: Pagination
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
 	res, err := s.client.Scan(ctx, &dynamodb.ScanInput{
 		TableName: s.table,

@@ -2,6 +2,7 @@ package db
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// TODO: Review
 func newAssignedToFilter(assignedTo string) (Filter, error) {
 	oid, err := primitive.ObjectIDFromHex(assignedTo)
 	if err != nil {

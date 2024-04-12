@@ -12,3 +12,7 @@ deploy-auth:
 	@aws cloudformation deploy --template-file cloudformation/auth_template.yaml --stack-name auth-stack
 delete-auth:
 	@aws cloudformation delete-stack --stack-name auth-stack
+deploy: deploy-auth
+	@aws cloudformation deploy --template-file cloudformation/template.yaml --stack-name demo 
+delete: delete-auth
+	@aws cloudformation delete-stack --stack-name demo
