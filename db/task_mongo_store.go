@@ -86,3 +86,6 @@ func (s *MongoTaskStore) GetTasks(ctx context.Context, filter Filter, pagination
 	}
 	return tasks, err
 }
+func (s *MongoTaskStore) Drop(ctx context.Context) error {
+	return s.coll.Drop(ctx)
+}

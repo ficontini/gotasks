@@ -13,6 +13,7 @@ type TaskStore interface {
 	TaskUpdater
 	TaskGetter
 	Deleter
+	Dropper
 }
 
 type TaskUpdater interface {
@@ -25,4 +26,8 @@ type TaskGetter interface {
 
 type Deleter interface {
 	Delete(context.Context, string) error
+}
+
+type Dropper interface {
+	Drop(context.Context) error
 }

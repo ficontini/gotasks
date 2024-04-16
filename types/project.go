@@ -45,9 +45,3 @@ func (params NewProjectParams) Validate() map[string]string {
 type AddTaskParams struct {
 	TaskID string `json:"taskID"`
 }
-
-func (p AddTaskParams) ToMap() map[string]any {
-	return map[string]any{
-		"tasks": p.TaskID,
-	}
-}

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -23,6 +24,7 @@ func NewDynamoDBTaskStore(client *dynamodb.Client) *DynamoDBTaskStore {
 		table:  aws.String(taskColl),
 	}
 }
+
 func (s *DynamoDBTaskStore) InsertTask(ctx context.Context, task *types.Task) (*types.Task, error) {
 	task.ID = uuid.New().String()
 	item, err := attributevalue.MarshalMap(task)
@@ -102,19 +104,34 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 
 // TODO: Pagination
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
-	res, err := s.client.Scan(ctx, &dynamodb.ScanInput{
+	var tasks []*types.Task
+	numPages := 0
+	limit := int32(pagination.Limit)
+	page := int(pagination.Page)
+	paginator := dynamodb.NewScanPaginator(s.client, &dynamodb.ScanInput{
+		TableName: s.table,
+		Limit:     &limit,
+	})
+	for paginator.HasMorePages() {
+		res, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if numPages == page {
+			if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
+				return nil, err
+			}
+			return tasks, nil
+		}
+		numPages++
+	}
+	return nil, ErrorNotFound
+}
+func (s *DynamoDBTaskStore) Drop(ctx context.Context) error {
+	_, err := s.client.DeleteTable(ctx, &dynamodb.DeleteTableInput{
 		TableName: s.table,
 	})
-	if err != nil {
-		return nil, err
-	}
-	var tasks []*types.Task
-	for _, item := range res.Items {
-		var task *types.Task
-		if err := attributevalue.UnmarshalMap(item, &task); err != nil {
-			return nil, ErrorNotFound
-		}
-		tasks = append(tasks, task)
-	}
-	return tasks, nil
+	return err
 }
+
+var ErrInvalidBatchSize = errors.New("invalid batch size")

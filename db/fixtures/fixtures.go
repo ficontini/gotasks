@@ -36,6 +36,7 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 	}
 	return insertedTask
 }
+
 func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *types.User {
 	user, err := types.NewUserFromParams(types.CreateUserParams{
 		FirstName: fn,

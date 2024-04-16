@@ -1,6 +1,11 @@
 package db
 
-import "go.mongodb.org/mongo-driver/bson"
+import (
+	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Filter interface {
 	ToBSON() bson.M
@@ -20,11 +25,16 @@ func (f CompletedFilter) ToBSON() bson.M {
 }
 
 type AssignedToFilter struct {
-	AssignedTo interface{}
+	AssignedTo string
 }
 
+// TODO: Review
 func (f AssignedToFilter) ToBSON() bson.M {
-	return bson.M{"assignedTo": f.AssignedTo}
+	oid, err := primitive.ObjectIDFromHex(f.AssignedTo)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bson.M{"assignedTo": oid}
 }
 
 type UserTasksFilter struct {

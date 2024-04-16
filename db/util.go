@@ -25,12 +25,19 @@ func (p *Pagination) SetDefaults() {
 		p.Page = DEFAULT_PAGE
 	}
 }
-func (p *Pagination) generatePagination() (skip int64, limit int64) {
+func (p *Pagination) generatePagination() (int64, int64) {
 	p.SetDefaults()
-	skip = (p.Page - 1) * p.Limit
-	limit = p.Limit
+	skip := (p.Page - 1) * p.Limit
+	limit := p.Limit
 	return skip, limit
 }
+func (p *Pagination) generatePaginationForDynamoDB() (int32, *int32) {
+	p.SetDefaults()
+	offset := int32((p.Page - 1) * p.Limit)
+	limit := int32(p.Limit)
+	return offset, &limit
+}
+
 func (p *Pagination) getOptions() *options.FindOptions {
 	skip, limit := p.generatePagination()
 	opts := &options.FindOptions{}

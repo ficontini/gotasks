@@ -68,3 +68,18 @@ func (u TaskAssignationUpdater) ToBSON() bson.M {
 func (u TaskAssignationUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("assignedTo"), expression.Value(u.AssignedTo))
 }
+
+// TODO: Review - Doesn't work properly
+type AddTaskUpdater struct {
+	TaskID string
+}
+
+func (u AddTaskUpdater) ToBSON() bson.M {
+	return bson.M{
+		"tasks": u.TaskID,
+	}
+}
+func (u AddTaskUpdater) ToExpression() expression.UpdateBuilder {
+	return expression.Set(expression.Name("tasks"), expression.Value(u.TaskID))
+
+}

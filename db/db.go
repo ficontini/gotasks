@@ -42,7 +42,7 @@ func NewStore() (*Store, error) {
 	taskStore := NewMongoTaskStore(client)
 	return &Store{
 		Auth:    NewDynamoDBAuthStore(dynamoClient),
-		User:    NewDynamoDBUserStore(dynamoClient),
+		User:    NewMongoUserStore(client),
 		Task:    taskStore,
 		Project: NewMongoProjectStore(client, taskStore),
 	}, nil
