@@ -135,3 +135,22 @@ func (s *DynamoDBTaskStore) Drop(ctx context.Context) error {
 }
 
 var ErrInvalidBatchSize = errors.New("invalid batch size")
+
+func (s *DynamoDBTaskStore) GetUpdater(params types.AddTaskParams) (*dynamodbtypes.Update, error) {
+	key, err := GetKey(params.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	update := expression.Set(expression.Name("projectID"), expression.Value(params.ProjectID))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return nil, err
+	}
+	return &dynamodbtypes.Update{
+		TableName:                 s.table,
+		Key:                       key,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+	}, nil
+}

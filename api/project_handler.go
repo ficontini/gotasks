@@ -60,7 +60,7 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	}
 	return c.JSON(project)
 }
-func (h *ProjectHandler) HandlePutTask(c *fiber.Ctx) error {
+func (h *ProjectHandler) HandlePostTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if len(id) == 0 {
 		return ErrInvalidID()
@@ -70,8 +70,17 @@ func (h *ProjectHandler) HandlePutTask(c *fiber.Ctx) error {
 		return ErrBadRequest()
 	}
 	params.ProjectID = id
-	if err := h.projectService.PutTask(c.Context(), params); err != nil {
-		return err
+	if err := h.projectService.AddTask(c.Context(), params); err != nil {
+		switch {
+		case errors.Is(err, service.ErrTaskNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrProjectNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrTaskAlreadyAssociated):
+			return ErrConflict(err.Error())
+		default:
+			return err
+		}
 	}
 	return c.JSON(fiber.Map{"added": params.TaskID})
 }

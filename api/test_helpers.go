@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/ficontini/gotasks/db"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,18 +21,21 @@ var (
 	testdburi string
 )
 
-type testdb struct {
+func setup(t *testing.T) *TestDynamoDB {
+	return setupTestDynamoDB(t)
+}
+
+type TestDB interface {
+	teardown(*testing.T)
+}
+
+type TestMongoDB struct {
 	client *mongo.Client
 	*db.Store
 }
 
-func (tdb *testdb) teardown(t *testing.T) {
-	if err := tdb.client.Database(db.DBNAME).Drop(context.TODO()); err != nil {
-		t.Fatal(err)
-	}
-}
-func setup(t *testing.T) *testdb {
-	if err := Init(); err != nil {
+func setupTestMongoDB(t *testing.T) *TestMongoDB {
+	if err := InitMongoTestDB(); err != nil {
 		log.Fatal(err)
 	}
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(testdburi))
@@ -38,7 +43,7 @@ func setup(t *testing.T) *testdb {
 		log.Fatal(err)
 	}
 	taskStore := db.NewMongoTaskStore(client)
-	return &testdb{
+	return &TestMongoDB{
 		client: client,
 		Store: &db.Store{
 			Task:    taskStore,
@@ -48,7 +53,12 @@ func setup(t *testing.T) *testdb {
 		},
 	}
 }
-func Init() error {
+func (tdb *TestMongoDB) teardown(t *testing.T) {
+	if err := tdb.client.Database(db.DBNAME).Drop(context.TODO()); err != nil {
+		t.Fatal(err)
+	}
+}
+func InitMongoTestDB() error {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Fatal(err)
 		return err
@@ -64,39 +74,41 @@ func Init() error {
 	return nil
 }
 
+type TestDynamoDB struct {
+	client *dynamodb.Client
+	*db.Store
+}
+
+// TODO:
+func (tdb *TestDynamoDB) teardown(t *testing.T) {
+
+}
+func setupTestDynamoDB(t *testing.T) *TestDynamoDB {
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Fatal(err)
+	}
+	if err := db.SetupDynamoDBConfigFromEnv(); err != nil {
+		log.Fatal(err)
+	}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(db.PROFILE))
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+	client := dynamodb.NewFromConfig(cfg)
+	taskStore := db.NewDynamoDBTaskStore(client)
+	return &TestDynamoDB{
+		client: client,
+		Store: &db.Store{
+			Auth:    db.NewDynamoDBAuthStore(client),
+			User:    db.NewDynamoDBUserStore(client),
+			Task:    taskStore,
+			Project: db.NewDynamoDBProjectStore(client, taskStore),
+		},
+	}
+}
+
 func checkStatusCode(t *testing.T, expected, actual int) {
 	if actual != expected {
 		t.Fatalf("expected %d status code, but got %d", expected, actual)
 	}
 }
-
-// type testdb struct {
-// 	client *dynamodb.Client
-// 	*db.Store
-// }
-
-// func (tdb *testdb) teardown(t *testing.T) {
-
-// }
-// func setup(t *testing.T) *testdb {
-// 	if err := godotenv.Load("../.env"); err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	if err := db.SetupDynamoDBConfigFromEnv(); err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(db.PROFILE))
-// 	if err != nil {
-// 		log.Fatalf("unable to load SDK config, %v", err)
-// 	}
-// 	client := dynamodb.NewFromConfig(cfg)
-// 	return &testdb{
-// 		client: client,
-// 		Store: &db.Store{
-// 			Auth:    db.NewDynamoDBAuthStore(client),
-// 			User:    db.NewDynamoDBUserStore(client),
-// 			Task:    db.NewDynamoDBTaskStore(client),
-// 			Project: db.NewDynamoDBProjectStore(client),
-// 		},
-// 	}
-// }

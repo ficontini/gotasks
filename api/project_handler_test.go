@@ -70,6 +70,11 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 	}
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
+func TestAddTaskToProjectSuccess(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+
+}
 
 func makePostRequest(params interface{}, authService *service.AuthService, auth *types.Auth, app *fiber.App) (*http.Response, error) {
 	b, err := json.Marshal(params)

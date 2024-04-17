@@ -15,14 +15,14 @@ import (
 type DynamoDBProjectStore struct {
 	client    *dynamodb.Client
 	table     *string
-	TaskStore *DynamoDBTaskStore
+	taskStore *DynamoDBTaskStore
 }
 
 func NewDynamoDBProjectStore(client *dynamodb.Client, taskStore *DynamoDBTaskStore) *DynamoDBProjectStore {
 	return &DynamoDBProjectStore{
 		client:    client,
 		table:     aws.String(projectColl),
-		TaskStore: taskStore,
+		taskStore: taskStore,
 	}
 }
 func (s *DynamoDBProjectStore) InsertProject(ctx context.Context, project *types.Project) (*types.Project, error) {
@@ -57,44 +57,20 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 	}
 	var project *types.Project
 	if err := attributevalue.UnmarshalMap(res.Item, &project); err != nil {
-		return nil, ErrorNotFound
+		return nil, err
 	}
 	return project, nil
 }
 
-// TODO:
+// TODO: review this implementation
 func (s *DynamoDBProjectStore) UpdateProjectTasks(ctx context.Context, params types.AddTaskParams) error {
-	key, err := GetKey(params.ProjectID)
+	projectUpdate, err := s.GetUpdater(params)
 	if err != nil {
 		return err
 	}
-	update := expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{params.TaskID})))
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	taskUpdate, err := s.taskStore.GetUpdater(params)
 	if err != nil {
 		return err
-	}
-	projectUpdate := &dynamodbtypes.Update{
-		TableName:                 s.table,
-		Key:                       key,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		UpdateExpression:          expr.Update(),
-	}
-	key, err = GetKey(params.TaskID)
-	if err != nil {
-		return err
-	}
-	update = expression.Set(expression.Name("projectID"), expression.Value(params.ProjectID))
-	expr, err = expression.NewBuilder().WithUpdate(update).Build()
-	if err != nil {
-		return err
-	}
-	taskUpdate := &dynamodbtypes.Update{
-		TableName:                 s.TaskStore.table,
-		Key:                       key,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		UpdateExpression:          expr.Update(),
 	}
 	operations := []dynamodbtypes.TransactWriteItem{
 		{
@@ -111,4 +87,22 @@ func (s *DynamoDBProjectStore) UpdateProjectTasks(ctx context.Context, params ty
 		return err
 	}
 	return nil
+}
+func (s *DynamoDBProjectStore) GetUpdater(params types.AddTaskParams) (*dynamodbtypes.Update, error) {
+	key, err := GetKey(params.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	update := expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{params.TaskID})))
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return nil, err
+	}
+	return &dynamodbtypes.Update{
+		TableName:                 s.table,
+		Key:                       key,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+	}, nil
 }

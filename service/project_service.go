@@ -36,14 +36,35 @@ func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*type
 }
 
 // TODO:
-func (svc *ProjectService) PutTask(ctx context.Context, params types.AddTaskParams) error {
+func (svc *ProjectService) AddTask(ctx context.Context, params types.AddTaskParams) error {
+	exists, task := svc.taskExists(ctx, params.TaskID)
+	if !exists {
+		return ErrTaskNotFound
+	}
+	if !svc.projectExists(ctx, params.ProjectID) {
+		return ErrProjectNotFound
+	}
+	if task.ProjectID == params.ProjectID {
+		return ErrTaskAlreadyAssociated
+	}
 	if err := svc.store.Project.UpdateProjectTasks(ctx, params); err != nil {
 		return err
 	}
-	// if err := svc.store.Task.Update(ctx, params.TaskID, db.AddProjectUpdater{ProjectID: id}); err != nil {
-	// 	return err
-	// }
 	return nil
+}
+func (svc *ProjectService) taskExists(ctx context.Context, id string) (bool, *types.Task) {
+	task, err := svc.store.Task.GetTaskByID(ctx, id)
+	if err != nil {
+		return false, nil
+	}
+	return task != nil, task
+}
+func (svc *ProjectService) projectExists(ctx context.Context, id string) bool {
+	project, err := svc.store.Project.GetProjectByID(ctx, id)
+	if err != nil {
+		return false
+	}
+	return project != nil
 }
 
 var (
