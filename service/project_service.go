@@ -35,6 +35,17 @@ func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*type
 	return project, nil
 }
 
+// TODO:
+func (svc *ProjectService) PutTask(ctx context.Context, params types.AddTaskParams) error {
+	if err := svc.store.Project.UpdateProjectTasks(ctx, params); err != nil {
+		return err
+	}
+	// if err := svc.store.Task.Update(ctx, params.TaskID, db.AddProjectUpdater{ProjectID: id}); err != nil {
+	// 	return err
+	// }
+	return nil
+}
+
 var (
 	ErrTaskAlreadyAssociated = errors.New("task is already associated with this project")
 	ErrProjectNotFound       = errors.New("project resource not found")

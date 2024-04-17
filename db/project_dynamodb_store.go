@@ -63,23 +63,49 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 }
 
 // TODO:
-func (s *DynamoDBTaskStore) UpdateProjectTasks(ctx context.Context, id string, params Update) error {
-	key, err := GetKey(id)
+func (s *DynamoDBProjectStore) UpdateProjectTasks(ctx context.Context, params types.AddTaskParams) error {
+	key, err := GetKey(params.ProjectID)
 	if err != nil {
 		return err
 	}
-	update := params.ToExpression()
+	update := expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{params.TaskID})))
 	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
 		return err
 	}
-	_, err = s.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+	projectUpdate := &dynamodbtypes.Update{
 		TableName:                 s.table,
 		Key:                       key,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
-		ReturnValues:              dynamodbtypes.ReturnValueUpdatedNew,
+	}
+	key, err = GetKey(params.TaskID)
+	if err != nil {
+		return err
+	}
+	update = expression.Set(expression.Name("projectID"), expression.Value(params.ProjectID))
+	expr, err = expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return err
+	}
+	taskUpdate := &dynamodbtypes.Update{
+		TableName:                 s.TaskStore.table,
+		Key:                       key,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+	}
+	operations := []dynamodbtypes.TransactWriteItem{
+		{
+			Update: projectUpdate,
+		},
+		{
+			Update: taskUpdate,
+		},
+	}
+	_, err = s.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
+		TransactItems: operations,
 	})
 	if err != nil {
 		return err

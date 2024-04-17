@@ -80,6 +80,16 @@ func (u AddTaskUpdater) ToBSON() bson.M {
 	}
 }
 func (u AddTaskUpdater) ToExpression() expression.UpdateBuilder {
-	return expression.Set(expression.Name("tasks"), expression.Value(u.TaskID))
+	return expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{u.TaskID})))
+}
 
+type AddProjectUpdater struct {
+	ProjectID string
+}
+
+func (u AddProjectUpdater) ToBSON() bson.M {
+	return bson.M{}
+}
+func (u AddProjectUpdater) ToExpression() expression.UpdateBuilder {
+	return expression.Set(expression.Name("projectID"), expression.Value(u.ProjectID))
 }

@@ -17,6 +17,7 @@ type UserGetter interface {
 	GetUsers(context.Context, Filter, Pagination) ([]*types.User, error)
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
+	Dropper
 }
 type UserStore interface {
 	UserGetter
@@ -93,4 +94,7 @@ func (s *MongoUserStore) GetUsers(ctx context.Context, filter Filter, pagination
 		return nil, err
 	}
 	return users, err
+}
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+	return s.coll.Drop(ctx)
 }

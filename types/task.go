@@ -12,6 +12,7 @@ type Task struct {
 	DueDate     time.Time `bson:"dueDate" dynamodbav:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
 	AssignedTo  string    `bson:"assignedTo" dynamodbav:"assignedTo" json:"assignedTo,omitempty"`
+	ProjectID   string    `bson:"projectID" dynamodbav:"projectID" json:"projectID"`
 }
 
 type NewTaskParams struct {

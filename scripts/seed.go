@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"math/rand"
@@ -14,18 +13,21 @@ import (
 
 func main() {
 
-	client, err := db.NewMongoClient()
+	client, err := db.NewDynamoDBClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 	store := &db.Store{
-		Task: db.NewMongoTaskStore(client),
-		User: db.NewMongoUserStore(client),
+		Task: db.NewDynamoDBTaskStore(client),
+		User: db.NewDynamoDBUserStore(client),
 	}
-	if err := store.Task.Drop(context.Background()); err != nil {
-		log.Fatal(err)
-	}
-	for i := 0; i < 25; i++ {
+	// if err := store.Task.Drop(context.Background()); err != nil {
+	// 	log.Fatal(err)
+	// }
+	// if err := store.User.Drop(context.Background()); err != nil {
+	// 	log.Fatal(err)
+	// }
+	for i := 0; i < 10; i++ {
 		title := fmt.Sprintf("task%d", i)
 		description := fmt.Sprintf("description of task%d", i)
 		fixtures.AddTask(store, title, description, time.Now().AddDate(0, 0, rand.Intn(10)), rand.Intn(2) == 0)

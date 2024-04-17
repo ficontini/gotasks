@@ -60,3 +60,18 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	}
 	return c.JSON(project)
 }
+func (h *ProjectHandler) HandlePutTask(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	var params types.AddTaskParams
+	if err := c.BodyParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	params.ProjectID = id
+	if err := h.projectService.PutTask(c.Context(), params); err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"added": params.TaskID})
+}

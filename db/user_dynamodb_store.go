@@ -138,3 +138,9 @@ func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
 	}
 	return map[string]dynamodbtypes.AttributeValue{"ID": id}, nil
 }
+func (s *DynamoDBUserStore) Drop(ctx context.Context) error {
+	_, err := s.client.DeleteTable(ctx, &dynamodb.DeleteTableInput{
+		TableName: s.table,
+	})
+	return err
+}
