@@ -61,7 +61,7 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 	}
 	return project, nil
 }
-func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions []UpdateAction) error {
+func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions []DBAction) error {
 	operations := make([]dynamodbtypes.TransactWriteItem, 0, len(actions))
 	for _, action := range actions {
 		operation, err := action.get()

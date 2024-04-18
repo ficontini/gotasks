@@ -9,41 +9,38 @@ type DBAction interface {
 	get() (interface{}, error)
 }
 type UpdateAction struct {
-	Key       map[string]dynamodbtypes.AttributeValue
-	Update    expression.UpdateBuilder
+	ID        string
+	Params    Update
 	TableName string
 }
 
 func NewTaskUpdateAction(id string, params Update) (*UpdateAction, error) {
-	key, err := GetKey(id)
-	if err != nil {
-		return nil, err
-	}
 	return &UpdateAction{
-		Key:       key,
-		Update:    params.ToExpression(),
+		ID:        id,
+		Params:    params,
 		TableName: taskColl,
 	}, nil
 }
 func NewProjectUpdateAction(id string, params Update) (*UpdateAction, error) {
-	key, err := GetKey(id)
-	if err != nil {
-		return nil, err
-	}
 	return &UpdateAction{
-		Key:       key,
-		Update:    params.ToExpression(),
+		ID:        id,
+		Params:    params,
 		TableName: projectColl,
 	}, nil
 }
 func (a *UpdateAction) get() (interface{}, error) {
-	expr, err := expression.NewBuilder().WithUpdate(a.Update).Build()
+	key, err := GetKey(a.ID)
+	if err != nil {
+		return nil, err
+	}
+	update := a.Params.ToExpression()
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
 	if err != nil {
 		return nil, err
 	}
 	return &dynamodbtypes.Update{
 		TableName:                 &a.TableName,
-		Key:                       a.Key,
+		Key:                       key,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),

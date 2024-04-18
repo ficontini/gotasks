@@ -60,19 +60,19 @@ func (svc *ProjectService) AddTask(ctx context.Context, projectID string, params
 	}
 	return nil
 }
-func createActions(projectID, taskID string) ([]db.UpdateAction, error) {
-	actions := []db.UpdateAction{}
+func createActions(projectID, taskID string) ([]db.DBAction, error) {
+	actions := []db.DBAction{}
 
 	taskAction, err := db.NewTaskUpdateAction(taskID, db.TaskProjectIDUpdater{ProjectID: projectID})
 	if err != nil {
 		return nil, err
 	}
-	actions = append(actions, *taskAction)
+	actions = append(actions, taskAction)
 	projectAction, err := db.NewProjectUpdateAction(projectID, db.AddTaskToProjectUpdater{TaskID: taskID})
 	if err != nil {
 		return nil, err
 	}
-	actions = append(actions, *projectAction)
+	actions = append(actions, projectAction)
 	return actions, nil
 }
 func (svc *ProjectService) taskExists(ctx context.Context, id string) (bool, *types.Task) {
