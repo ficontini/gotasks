@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"go.mongodb.org/mongo-driver/bson"
@@ -37,6 +38,19 @@ func (u PasswordUpdater) ToBSON() bson.M {
 }
 func (u PasswordUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("encryptedPassword"), expression.Value(u.EncryptedPassword))
+}
+
+type TaskDueDateUpdater struct {
+	DueDate time.Time
+}
+
+func (u TaskDueDateUpdater) ToBSON() bson.M {
+	return bson.M{
+		"$set": bson.M{"dueDate": u.DueDate},
+	}
+}
+func (u TaskDueDateUpdater) ToExpression() expression.UpdateBuilder {
+	return expression.Set(expression.Name("dueDate"), expression.Value(u.DueDate))
 }
 
 type TaskCompleteUpdater struct {

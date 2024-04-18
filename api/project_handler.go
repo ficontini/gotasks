@@ -60,6 +60,8 @@ func (h *ProjectHandler) HandleGetProject(c *fiber.Ctx) error {
 	}
 	return c.JSON(project)
 }
+
+// TODO: check who can add tasks to a project
 func (h *ProjectHandler) HandlePostTask(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if len(id) == 0 {

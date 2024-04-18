@@ -106,6 +106,23 @@ func (svc *TaskService) assignTask(ctx context.Context, taskID, userID string) e
 
 }
 
+func (svc *TaskService) UpdateDueDate(ctx context.Context, id string, params types.UpdateDueDateTaskRequest) error {
+	task, err := svc.store.Task.GetTaskByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if task.AssignedTo != params.AssignedTo {
+		return ErrUnAuthorized
+	}
+	if err := svc.store.Task.Update(ctx, id, db.TaskDueDateUpdater{DueDate: params.DueDate}); err != nil {
+		if errors.Is(err, db.ErrorNotFound) {
+			return ErrTaskNotFound
+		}
+		return err
+	}
+	return nil
+}
+
 var (
 	ErrTaskAlreadyCompleted = errors.New("task already completed")
 	ErrTaskNotFound         = errors.New("task resource not found")

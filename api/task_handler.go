@@ -162,3 +162,32 @@ func (h *TaskHandler) HandleAssignTaskToUser(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"assigned": "true"})
 }
+func (h *TaskHandler) HandlePutDueDateTask(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	var req types.UpdateDueDateTaskRequest
+	if err := c.BodyParser(&req); err != nil {
+		return ErrBadRequest()
+	}
+	if err := req.Validate(); err != nil {
+		return ErrBadRequestCustomMessage(err.Error())
+	}
+	user, err := getUserAuth(c)
+	if err != nil {
+		return err
+	}
+	req.AssignedTo = user.ID
+	if err := h.taskService.UpdateDueDate(c.Context(), id, req); err != nil {
+		switch {
+		case errors.Is(err, service.ErrUnAuthorized):
+			return ErrUnAuthorized()
+		case errors.Is(err, service.ErrTaskNotFound):
+			return ErrResourceNotFound(err.Error())
+		default:
+			return err
+		}
+	}
+	return c.JSON(fiber.Map{"updated": id})
+}

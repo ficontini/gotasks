@@ -131,13 +131,7 @@ func (s *DynamoDBUserStore) Update(ctx context.Context, idStr string, params Upd
 	}
 	return nil
 }
-func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
-	id, err := attributevalue.Marshal(idStr)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]dynamodbtypes.AttributeValue{"ID": id}, nil
-}
+
 func (s *DynamoDBUserStore) Drop(ctx context.Context) error {
 	_, err := s.client.DeleteTable(ctx, &dynamodb.DeleteTableInput{
 		TableName: s.table,

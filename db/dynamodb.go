@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const AwsProfileEnvName = "AWS_PROFILE"
@@ -45,4 +47,12 @@ func SetupDynamoDBConfigFromEnv() error {
 		return fmt.Errorf("%s env variable not set", AwsProfileEnvName)
 	}
 	return nil
+}
+
+func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
+	id, err := attributevalue.Marshal(idStr)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]dynamodbtypes.AttributeValue{"ID": id}, nil
 }

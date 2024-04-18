@@ -12,7 +12,7 @@ type Task struct {
 	DueDate     time.Time `bson:"dueDate" dynamodbav:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
 	AssignedTo  string    `bson:"assignedTo" dynamodbav:"assignedTo" json:"assignedTo,omitempty"`
-	ProjectID   string    `bson:"projectID" dynamodbav:"projectID" json:"projectID"`
+	ProjectID   string    `bson:"projectID" dynamodbav:"projectID" json:"projectID,omitempty"`
 }
 
 type NewTaskParams struct {
@@ -48,4 +48,16 @@ func isDateValid(date time.Time) bool {
 type UpdateTaskRequest struct {
 	TaskID string
 	UserID string `json:"userID"`
+}
+
+type UpdateDueDateTaskRequest struct {
+	DueDate    time.Time `json:"dueDate"`
+	AssignedTo string
+}
+
+func (req UpdateDueDateTaskRequest) Validate() error {
+	if !isDateValid(req.DueDate) {
+		return fmt.Errorf("date %v is not valid", req.DueDate)
+	}
+	return nil
 }

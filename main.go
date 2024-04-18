@@ -42,6 +42,7 @@ func main() {
 	apiv1.Get("/task/:id", handler.Task.HandleGetTask)
 	apiv1.Post("/task/:id/assign", handler.Task.HandleAssignTaskToSelf)
 	apiv1.Post("/task/:id/complete", handler.Task.HandleCompleteTask)
+	apiv1.Put("/task/:id/due-date", handler.Task.HandlePutDueDateTask)
 	admin.Post("/task/:id/assign", handler.Task.HandleAssignTaskToUser)
 	admin.Delete("/task/:id", handler.Task.HandleDeleteTask)
 	admin.Get("/task", handler.Task.HandleGetTasks)
