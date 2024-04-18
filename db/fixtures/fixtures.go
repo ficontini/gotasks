@@ -36,7 +36,11 @@ func AddTask(store *db.Store, title, description string, dueTo time.Time, comple
 	}
 	return insertedTask
 }
-
+func AddProjectIDToTask(store *db.Store, task *types.Task, projectID string) {
+	if err := store.Task.Update(context.Background(), task.ID, db.TaskProjectIDUpdater{ProjectID: projectID}); err != nil {
+		log.Fatal(err)
+	}
+}
 func AddUser(store *db.Store, fn, ln, pwd string, isAdmin, enabled bool) *types.User {
 	user, err := types.NewUserFromParams(types.CreateUserParams{
 		FirstName: fn,

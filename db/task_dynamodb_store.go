@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -133,5 +132,3 @@ func (s *DynamoDBTaskStore) Drop(ctx context.Context) error {
 	})
 	return err
 }
-
-var ErrInvalidBatchSize = errors.New("invalid batch size")

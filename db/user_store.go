@@ -17,12 +17,12 @@ type UserGetter interface {
 	GetUsers(context.Context, Filter, Pagination) ([]*types.User, error)
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
-	Dropper
 }
 type UserStore interface {
 	UserGetter
 	InsertUser(context.Context, *types.User) (*types.User, error)
 	Update(context.Context, string, Update) error
+	Dropper
 }
 
 type MongoUserStore struct {

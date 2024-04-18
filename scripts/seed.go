@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
@@ -12,21 +13,7 @@ import (
 )
 
 func main() {
-
-	client, err := db.NewDynamoDBClient()
-	if err != nil {
-		log.Fatal(err)
-	}
-	store := &db.Store{
-		Task: db.NewDynamoDBTaskStore(client),
-		User: db.NewDynamoDBUserStore(client),
-	}
-	// if err := store.Task.Drop(context.Background()); err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := store.User.Drop(context.Background()); err != nil {
-	// 	log.Fatal(err)
-	// }
+	store := seedDynamoDB()
 	for i := 0; i < 10; i++ {
 		title := fmt.Sprintf("task%d", i)
 		description := fmt.Sprintf("description of task%d", i)
@@ -36,7 +23,34 @@ func main() {
 	fixtures.AddUser(store, "admin", "foobaz", "supersecurepassword", true, true)
 	fmt.Println("seeding the database")
 }
+func seedDynamoDB() *db.Store {
+	client, err := db.NewDynamoDBClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &db.Store{
+		Task: db.NewDynamoDBTaskStore(client),
+		User: db.NewDynamoDBUserStore(client),
+	}
+}
+func seedMongo() *db.Store {
+	client, err := db.NewMongoClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	store := &db.Store{
+		Task: db.NewMongoTaskStore(client),
+		User: db.NewMongoUserStore(client),
+	}
+	if err := store.Task.Drop(context.Background()); err != nil {
+		log.Fatal(err)
+	}
 
+	if err := store.User.Drop(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+	return store
+}
 func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)

@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"errors"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -82,9 +82,8 @@ func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions [
 		TransactItems: operations,
 	})
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 	return nil
 }
-
-var ErrInvalidOperationType = errors.New("invalid operation")

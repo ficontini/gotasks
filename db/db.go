@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -18,9 +17,6 @@ const (
 var (
 	DBNAME string
 	DBURI  string
-
-	ErrorNotFound = errors.New("resource not found")
-	ErrInvalidID  = errors.New("invalid ID")
 )
 
 type Store struct {
