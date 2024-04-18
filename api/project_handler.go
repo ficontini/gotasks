@@ -69,8 +69,7 @@ func (h *ProjectHandler) HandlePostTask(c *fiber.Ctx) error {
 	if err := c.BodyParser(&params); err != nil {
 		return ErrBadRequest()
 	}
-	params.ProjectID = id
-	if err := h.projectService.AddTask(c.Context(), params); err != nil {
+	if err := h.projectService.AddTask(c.Context(), id, params); err != nil {
 		switch {
 		case errors.Is(err, service.ErrTaskNotFound):
 			return ErrResourceNotFound(err.Error())

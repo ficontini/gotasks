@@ -8,6 +8,11 @@ import (
 	"github.com/ficontini/gotasks/types"
 )
 
+var (
+	ErrTaskAlreadyAssociated = errors.New("task is already associated with this project")
+	ErrProjectNotFound       = errors.New("project resource not found")
+)
+
 type ProjectService struct {
 	store *db.Store
 }
@@ -35,22 +40,40 @@ func (svc *ProjectService) GetProjectByID(ctx context.Context, id string) (*type
 	return project, nil
 }
 
-// TODO:
-func (svc *ProjectService) AddTask(ctx context.Context, params types.AddTaskParams) error {
+func (svc *ProjectService) AddTask(ctx context.Context, projectID string, params types.AddTaskParams) error {
 	exists, task := svc.taskExists(ctx, params.TaskID)
 	if !exists {
 		return ErrTaskNotFound
 	}
-	if !svc.projectExists(ctx, params.ProjectID) {
+	if !svc.projectExists(ctx, projectID) {
 		return ErrProjectNotFound
 	}
-	if task.ProjectID == params.ProjectID {
+	if task.ProjectID == projectID {
 		return ErrTaskAlreadyAssociated
 	}
-	if err := svc.store.Project.UpdateProjectTasks(ctx, params); err != nil {
+	actions, err := createActions(projectID, params.TaskID)
+	if err != nil {
+		return err
+	}
+	if err := svc.store.Project.TransactWriteItems(ctx, actions); err != nil {
 		return err
 	}
 	return nil
+}
+func createActions(projectID, taskID string) ([]db.UpdateAction, error) {
+	actions := []db.UpdateAction{}
+
+	taskAction, err := db.NewTaskUpdateAction(taskID, db.TaskProjectIDUpdater{ProjectID: projectID})
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, *taskAction)
+	projectAction, err := db.NewProjectUpdateAction(projectID, db.AddTaskToProjectUpdater{TaskID: taskID})
+	if err != nil {
+		return nil, err
+	}
+	actions = append(actions, *projectAction)
+	return actions, nil
 }
 func (svc *ProjectService) taskExists(ctx context.Context, id string) (bool, *types.Task) {
 	task, err := svc.store.Task.GetTaskByID(ctx, id)
@@ -66,8 +89,3 @@ func (svc *ProjectService) projectExists(ctx context.Context, id string) bool {
 	}
 	return project != nil
 }
-
-var (
-	ErrTaskAlreadyAssociated = errors.New("task is already associated with this project")
-	ErrProjectNotFound       = errors.New("project resource not found")
-)

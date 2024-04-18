@@ -15,7 +15,7 @@ const projectColl = "projects"
 type ProjectStore interface {
 	GetProjectByID(context.Context, string) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
-	UpdateProjectTasks(context.Context, types.AddTaskParams) error
+	TransactWriteItems(context.Context, []UpdateAction) error
 }
 
 type MongoProjectStore struct {
@@ -55,6 +55,6 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 }
 
 // TODO
-func (s *MongoProjectStore) UpdateProjectTasks(ctx context.Context, params types.AddTaskParams) error {
+func (s *MongoProjectStore) TransactWriteItems(context.Context, []UpdateAction) error {
 	return nil
 }

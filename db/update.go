@@ -69,27 +69,26 @@ func (u TaskAssignationUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("assignedTo"), expression.Value(u.AssignedTo))
 }
 
-// TODO: Review - Doesn't work properly
-type AddTaskUpdater struct {
+type AddTaskToProjectUpdater struct {
 	TaskID string
 }
 
-func (u AddTaskUpdater) ToBSON() bson.M {
+func (u AddTaskToProjectUpdater) ToBSON() bson.M {
 	return bson.M{
 		"tasks": u.TaskID,
 	}
 }
-func (u AddTaskUpdater) ToExpression() expression.UpdateBuilder {
+func (u AddTaskToProjectUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{u.TaskID})))
 }
 
-type AddProjectUpdater struct {
+type TaskProjectIDUpdater struct {
 	ProjectID string
 }
 
-func (u AddProjectUpdater) ToBSON() bson.M {
+func (u TaskProjectIDUpdater) ToBSON() bson.M {
 	return bson.M{}
 }
-func (u AddProjectUpdater) ToExpression() expression.UpdateBuilder {
+func (u TaskProjectIDUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("projectID"), expression.Value(u.ProjectID))
 }

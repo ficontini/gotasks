@@ -43,6 +43,5 @@ func (params NewProjectParams) Validate() map[string]string {
 }
 
 type AddTaskParams struct {
-	TaskID    string `json:"taskID"`
-	ProjectID string
+	TaskID string `json:"taskID"`
 }

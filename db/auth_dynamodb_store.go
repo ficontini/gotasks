@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -33,7 +32,6 @@ func (s *DynamoDBAuthStore) Insert(ctx context.Context, auth *types.Auth) (*type
 		TableName: s.table, Item: item,
 	})
 	if err != nil {
-		fmt.Println("err", err)
 		return nil, err
 	}
 	return auth, nil

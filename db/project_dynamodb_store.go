@@ -2,9 +2,9 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -61,26 +61,24 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 	}
 	return project, nil
 }
+func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions []UpdateAction) error {
+	operations := make([]dynamodbtypes.TransactWriteItem, 0, len(actions))
+	for _, action := range actions {
+		operation, err := action.get()
+		if err != nil {
+			return err
+		}
+		update, ok := operation.(*dynamodbtypes.Update)
+		if !ok {
+			return ErrInvalidOperationType
+		}
+		writeItem := dynamodbtypes.TransactWriteItem{
+			Update: update,
+		}
+		operations = append(operations, writeItem)
 
-// TODO: review this implementation
-func (s *DynamoDBProjectStore) UpdateProjectTasks(ctx context.Context, params types.AddTaskParams) error {
-	projectUpdate, err := s.GetUpdater(params)
-	if err != nil {
-		return err
 	}
-	taskUpdate, err := s.taskStore.GetUpdater(params)
-	if err != nil {
-		return err
-	}
-	operations := []dynamodbtypes.TransactWriteItem{
-		{
-			Update: projectUpdate,
-		},
-		{
-			Update: taskUpdate,
-		},
-	}
-	_, err = s.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
+	_, err := s.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
 		TransactItems: operations,
 	})
 	if err != nil {
@@ -88,21 +86,5 @@ func (s *DynamoDBProjectStore) UpdateProjectTasks(ctx context.Context, params ty
 	}
 	return nil
 }
-func (s *DynamoDBProjectStore) GetUpdater(params types.AddTaskParams) (*dynamodbtypes.Update, error) {
-	key, err := GetKey(params.ProjectID)
-	if err != nil {
-		return nil, err
-	}
-	update := expression.Set(expression.Name("tasks"), expression.ListAppend(expression.Name("tasks"), expression.Value([]string{params.TaskID})))
-	expr, err := expression.NewBuilder().WithUpdate(update).Build()
-	if err != nil {
-		return nil, err
-	}
-	return &dynamodbtypes.Update{
-		TableName:                 s.table,
-		Key:                       key,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		UpdateExpression:          expr.Update(),
-	}, nil
-}
+
+var ErrInvalidOperationType = errors.New("invalid operation")
