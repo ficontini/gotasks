@@ -15,23 +15,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const MongoTestEndpoint = "MONGO_DB_TEST_URI"
+const (
+	MongoTestEndpoint = "MONGO_DB_TEST_URI"
+	EnvFile           = "../.env"
+)
 
 var (
 	testdburi string
 )
 
-func setup(t *testing.T) *TestDynamoDB {
+func setup(t *testing.T) TestDB {
 	return setupTestDynamoDB(t)
 }
 
 type TestDB interface {
+	Store() *db.Store
 	teardown(*testing.T)
 }
 
 type TestMongoDB struct {
 	client *mongo.Client
-	*db.Store
+	store  *db.Store
 }
 
 func setupTestMongoDB(t *testing.T) *TestMongoDB {
@@ -45,7 +49,7 @@ func setupTestMongoDB(t *testing.T) *TestMongoDB {
 	taskStore := db.NewMongoTaskStore(client)
 	return &TestMongoDB{
 		client: client,
-		Store: &db.Store{
+		store: &db.Store{
 			Task:    taskStore,
 			User:    db.NewMongoUserStore(client),
 			Project: db.NewMongoProjectStore(client, taskStore),
@@ -58,8 +62,12 @@ func (tdb *TestMongoDB) teardown(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+func (tdb *TestMongoDB) Store() *db.Store {
+	return tdb.store
+}
+
 func InitMongoTestDB() error {
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load(EnvFile); err != nil {
 		log.Fatal(err)
 		return err
 	}
@@ -76,7 +84,7 @@ func InitMongoTestDB() error {
 
 type TestDynamoDB struct {
 	client *dynamodb.Client
-	*db.Store
+	store  *db.Store
 }
 
 // TODO:
@@ -98,7 +106,7 @@ func setupTestDynamoDB(t *testing.T) *TestDynamoDB {
 	taskStore := db.NewDynamoDBTaskStore(client)
 	return &TestDynamoDB{
 		client: client,
-		Store: &db.Store{
+		store: &db.Store{
 			Auth:    db.NewDynamoDBAuthStore(client),
 			User:    db.NewDynamoDBUserStore(client),
 			Task:    taskStore,
@@ -106,9 +114,6 @@ func setupTestDynamoDB(t *testing.T) *TestDynamoDB {
 		},
 	}
 }
-
-func checkStatusCode(t *testing.T, expected, actual int) {
-	if actual != expected {
-		t.Fatalf("expected %d status code, but got %d", expected, actual)
-	}
+func (tdb *TestDynamoDB) Store() *db.Store {
+	return tdb.store
 }

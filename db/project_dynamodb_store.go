@@ -61,6 +61,8 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 	}
 	return project, nil
 }
+
+// TODO: review
 func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions []DBAction) error {
 	operations := make([]dynamodbtypes.TransactWriteItem, 0, len(actions))
 	for _, action := range actions {

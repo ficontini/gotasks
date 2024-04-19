@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/ficontini/gotasks/db/fixtures"
@@ -21,9 +20,10 @@ func TestAuthenticateSuccess(t *testing.T) {
 
 	var (
 		password    = "supersecurepassword"
-		user        = fixtures.AddUser(db.Store, "james", "foo", password, false, true)
+		store       = db.Store()
+		user        = fixtures.AddUser(store, "james", "foo", password, false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		authService = service.NewAuthService(db.Store)
+		authService = service.NewAuthService(store)
 		authHandler = NewAuthHandler(authService)
 		params      = types.AuthParams{
 			Email:    user.Email,
@@ -31,13 +31,9 @@ func TestAuthenticateSuccess(t *testing.T) {
 		}
 	)
 	app.Post("/auth", authHandler.HandleAuthenticate)
-	b, _ := json.Marshal(params)
-	req := httptest.NewRequest(http.MethodPost, "/auth", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	b := marshallParamsToJSON(t, params)
+	req := makeUnauthenticatedRequest(http.MethodPost, "/auth", bytes.NewReader(b))
+	resp := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusOK, resp.StatusCode)
 	var authresp types.AuthResponse
 	if err := json.NewDecoder(resp.Body).Decode(&authresp); err != nil {
@@ -53,9 +49,10 @@ func TestAuthenticateWrongWithPasswordFailure(t *testing.T) {
 	defer db.teardown(t)
 
 	var (
-		user        = fixtures.AddUser(db.Store, "james", "foo", "supersecurepassword", false, true)
+		store       = db.Store()
+		user        = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		authService = service.NewAuthService(db.Store)
+		authService = service.NewAuthService(store)
 		authHandler = NewAuthHandler(authService)
 		params      = types.AuthParams{
 			Email:    user.Email,
@@ -63,12 +60,8 @@ func TestAuthenticateWrongWithPasswordFailure(t *testing.T) {
 		}
 	)
 	app.Post("/auth", authHandler.HandleAuthenticate)
-	b, _ := json.Marshal(params)
-	req := httptest.NewRequest(http.MethodPost, "/auth", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	b := marshallParamsToJSON(t, params)
+	req := makeUnauthenticatedRequest(http.MethodPost, "/auth", bytes.NewReader(b))
+	resp := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusUnauthorized, resp.StatusCode)
 }
