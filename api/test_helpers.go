@@ -25,7 +25,7 @@ var (
 )
 
 func setup(t *testing.T) TestDB {
-	return setupTestDynamoDB(t)
+	return setupTestMongoDB(t)
 }
 
 type TestDB interface {
@@ -103,14 +103,13 @@ func setupTestDynamoDB(t *testing.T) *TestDynamoDB {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 	client := dynamodb.NewFromConfig(cfg)
-	taskStore := db.NewDynamoDBTaskStore(client)
 	return &TestDynamoDB{
 		client: client,
 		store: &db.Store{
 			Auth:    db.NewDynamoDBAuthStore(client),
 			User:    db.NewDynamoDBUserStore(client),
-			Task:    taskStore,
-			Project: db.NewDynamoDBProjectStore(client, taskStore),
+			Task:    db.NewDynamoDBTaskStore(client),
+			Project: db.NewDynamoDBProjectStore(client),
 		},
 	}
 }

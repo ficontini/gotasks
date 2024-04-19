@@ -55,13 +55,13 @@ func (svc *ProjectService) AddTask(ctx context.Context, projectID string, params
 	if err != nil {
 		return err
 	}
-	if err := svc.store.Project.TransactWriteItems(ctx, actions); err != nil {
+	if err := svc.store.Project.TransactAddTask(ctx, actions); err != nil {
 		return err
 	}
 	return nil
 }
-func createActions(projectID, taskID string) ([]db.DBAction, error) {
-	actions := []db.DBAction{}
+func createActions(projectID, taskID string) ([]*db.UpdateAction, error) {
+	actions := []*db.UpdateAction{}
 
 	taskAction, err := db.NewTaskUpdateAction(taskID, db.TaskProjectIDUpdater{ProjectID: projectID})
 	if err != nil {

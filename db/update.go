@@ -88,8 +88,12 @@ type AddTaskToProjectUpdater struct {
 }
 
 func (u AddTaskToProjectUpdater) ToBSON() bson.M {
+	oid, err := primitive.ObjectIDFromHex(u.TaskID)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return bson.M{
-		"tasks": u.TaskID,
+		"$push": bson.M{"tasks": oid},
 	}
 }
 func (u AddTaskToProjectUpdater) ToExpression() expression.UpdateBuilder {
@@ -100,9 +104,12 @@ type TaskProjectIDUpdater struct {
 	ProjectID string
 }
 
-// TODO:
 func (u TaskProjectIDUpdater) ToBSON() bson.M {
-	return bson.M{}
+	oid, err := primitive.ObjectIDFromHex(u.ProjectID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bson.M{"$set": bson.M{"projectID": oid}}
 }
 func (u TaskProjectIDUpdater) ToExpression() expression.UpdateBuilder {
 	return expression.Set(expression.Name("projectID"), expression.Value(u.ProjectID))

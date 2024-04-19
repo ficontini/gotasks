@@ -21,12 +21,11 @@ func NewDynamoDBStore() (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	task := NewDynamoDBTaskStore(client)
 	return &Store{
 		Auth:    NewDynamoDBAuthStore(client),
 		User:    NewDynamoDBUserStore(client),
-		Task:    task,
-		Project: NewDynamoDBProjectStore(client, task),
+		Task:    NewDynamoDBTaskStore(client),
+		Project: NewDynamoDBProjectStore(client),
 	}, nil
 }
 func NewDynamoDBClient() (*dynamodb.Client, error) {

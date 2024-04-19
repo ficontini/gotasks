@@ -15,7 +15,7 @@ const projectColl = "projects"
 type ProjectStore interface {
 	GetProjectByID(context.Context, string) (*types.Project, error)
 	InsertProject(context.Context, *types.Project) (*types.Project, error)
-	TransactWriteItems(context.Context, []DBAction) error
+	TransactAddTask(context.Context, []*UpdateAction) error
 }
 
 type MongoProjectStore struct {
@@ -53,8 +53,45 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 	}
 	return project, nil
 }
-
-// TODO
-func (s *MongoProjectStore) TransactWriteItems(context.Context, []DBAction) error {
+func (s *MongoProjectStore) Update(ctx context.Context, id string, update Update) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrorNotFound
+	}
 	return nil
+}
+
+// TODO: Review
+func (s *MongoProjectStore) TransactAddTask(ctx context.Context, actions []*UpdateAction) error {
+	session, err := s.client.StartSession()
+	defer session.EndSession(ctx)
+	if err != nil {
+		return err
+	}
+	session.StartTransaction()
+	for _, action := range actions {
+		switch action.TableName {
+		case taskColl:
+			err = s.TaskStore.Update(ctx, action.ID, action.Params)
+			if err != nil {
+				session.AbortTransaction(ctx)
+				return err
+			}
+		default:
+			err = s.Update(ctx, action.ID, action.Params)
+			if err != nil {
+				session.AbortTransaction(ctx)
+				return err
+			}
+		}
+	}
+	err = session.CommitTransaction(ctx)
+	return err
 }

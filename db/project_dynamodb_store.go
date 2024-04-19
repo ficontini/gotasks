@@ -13,16 +13,14 @@ import (
 )
 
 type DynamoDBProjectStore struct {
-	client    *dynamodb.Client
-	table     *string
-	taskStore *DynamoDBTaskStore
+	client *dynamodb.Client
+	table  *string
 }
 
-func NewDynamoDBProjectStore(client *dynamodb.Client, taskStore *DynamoDBTaskStore) *DynamoDBProjectStore {
+func NewDynamoDBProjectStore(client *dynamodb.Client) *DynamoDBProjectStore {
 	return &DynamoDBProjectStore{
-		client:    client,
-		table:     aws.String(projectColl),
-		taskStore: taskStore,
+		client: client,
+		table:  aws.String(projectColl),
 	}
 }
 func (s *DynamoDBProjectStore) InsertProject(ctx context.Context, project *types.Project) (*types.Project, error) {
@@ -63,7 +61,7 @@ func (s *DynamoDBProjectStore) GetProjectByID(ctx context.Context, id string) (*
 }
 
 // TODO: review
-func (s *DynamoDBProjectStore) TransactWriteItems(ctx context.Context, actions []DBAction) error {
+func (s *DynamoDBProjectStore) TransactAddTask(ctx context.Context, actions []*UpdateAction) error {
 	operations := make([]dynamodbtypes.TransactWriteItem, 0, len(actions))
 	for _, action := range actions {
 		operation, err := action.get()
