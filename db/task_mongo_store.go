@@ -31,12 +31,16 @@ func (s *MongoTaskStore) InsertTask(ctx context.Context, task *types.Task) (*typ
 	return task, nil
 }
 
-func (s *MongoTaskStore) Update(ctx context.Context, id string, update Update) error {
+func (s *MongoTaskStore) Update(ctx context.Context, id string, params Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
+	update, err := params.ToBSON()
+	if err != nil {
+		return err
+	}
+	res, err := s.coll.UpdateByID(ctx, oid, update)
 	if err != nil {
 		return err
 	}
@@ -51,7 +55,7 @@ func (s *MongoTaskStore) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	res, err := s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	res, err := s.coll.DeleteOne(ctx, bson.M{mongoIDField: oid})
 	if err != nil {
 		return err
 	}
@@ -66,7 +70,7 @@ func (s *MongoTaskStore) GetTaskByID(ctx context.Context, id string) (*types.Tas
 		return nil, err
 	}
 	var task *types.Task
-	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&task); err != nil {
+	if err := s.coll.FindOne(ctx, bson.M{mongoIDField: oid}).Decode(&task); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
 		}

@@ -45,7 +45,7 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 		return nil, ErrInvalidID
 	}
 	var project *types.Project
-	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&project); err != nil {
+	if err := s.coll.FindOne(ctx, bson.M{mongoIDField: oid}).Decode(&project); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
 		}
@@ -53,12 +53,16 @@ func (s *MongoProjectStore) GetProjectByID(ctx context.Context, id string) (*typ
 	}
 	return project, nil
 }
-func (s *MongoProjectStore) Update(ctx context.Context, id string, update Update) error {
+func (s *MongoProjectStore) Update(ctx context.Context, id string, params Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
+	update, err := params.ToBSON()
+	if err != nil {
+		return err
+	}
+	res, err := s.coll.UpdateByID(ctx, oid, update)
 	if err != nil {
 		return err
 	}

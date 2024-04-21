@@ -63,7 +63,7 @@ func (s *DynamoDBUserStore) GetUserByID(ctx context.Context, idStr string) (*typ
 	return user, nil
 }
 func (s *DynamoDBUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
-	keyEx := expression.Key("email").Equal(expression.Value(email))
+	keyEx := expression.Key(emailField).Equal(expression.Value(email))
 	expr, err := expression.NewBuilder().WithKeyCondition(keyEx).Build()
 	if err != nil {
 		return nil, err

@@ -53,5 +53,5 @@ func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string]dynamodbtypes.AttributeValue{"ID": id}, nil
+	return map[string]dynamodbtypes.AttributeValue{dynamoIDField: id}, nil
 }

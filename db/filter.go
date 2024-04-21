@@ -21,7 +21,7 @@ type CompletedFilter struct {
 }
 
 func (f CompletedFilter) ToBSON() bson.M {
-	return bson.M{"completed": f.Completed}
+	return bson.M{completedField: f.Completed}
 }
 
 type AssignedToFilter struct {
@@ -34,7 +34,7 @@ func (f AssignedToFilter) ToBSON() bson.M {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return bson.M{"assignedTo": oid}
+	return bson.M{assingedToField: oid}
 }
 
 type UserTasksFilter struct {

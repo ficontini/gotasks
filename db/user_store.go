@@ -39,7 +39,7 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 
 func (s *MongoUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	var user *types.User
-	if err := s.coll.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
+	if err := s.coll.FindOne(ctx, bson.M{emailField: email}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
 		}
@@ -53,7 +53,7 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 		return nil, err
 	}
 	var user *types.User
-	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
+	if err := s.coll.FindOne(ctx, bson.M{mongoIDField: oid}).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, ErrorNotFound
 		}
@@ -69,12 +69,16 @@ func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*typ
 	user.ID = res.InsertedID.(primitive.ObjectID).Hex()
 	return user, nil
 }
-func (s *MongoUserStore) Update(ctx context.Context, id string, update Update) error {
+func (s *MongoUserStore) Update(ctx context.Context, id string, params Update) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	res, err := s.coll.UpdateByID(ctx, oid, update.ToBSON())
+	update, err := params.ToBSON()
+	if err != nil {
+		return err
+	}
+	res, err := s.coll.UpdateByID(ctx, oid, update)
 	if err != nil {
 		return err
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	store := seedMongo()
+	store := seedDynamoDB()
 	for i := 0; i < 10; i++ {
 		title := fmt.Sprintf("task%d", i)
 		description := fmt.Sprintf("description of task%d", i)

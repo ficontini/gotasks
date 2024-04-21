@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const ReturnAllOld = "ALL_OLD"
+
 type DynamoDBTaskStore struct {
 	client *dynamodb.Client
 	table  *string
@@ -69,7 +71,7 @@ func (s *DynamoDBTaskStore) Delete(ctx context.Context, id string) error {
 	res, err := s.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName:    s.table,
 		Key:          key,
-		ReturnValues: "ALL_OLD",
+		ReturnValues: ReturnAllOld,
 	})
 	if err != nil {
 		return err
@@ -102,6 +104,7 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 }
 
 // TODO: Pagination
+// Filter
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
 	var tasks []*types.Task
 	numPages := 0
