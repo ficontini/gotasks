@@ -34,7 +34,7 @@ func (f AssignedToFilter) ToBSON() bson.M {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return bson.M{assingedToField: oid}
+	return bson.M{assignedToField: oid}
 }
 
 type UserTasksFilter struct {

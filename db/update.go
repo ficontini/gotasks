@@ -75,11 +75,11 @@ func (u TaskAssignationUpdater) ToBSON() (bson.M, error) {
 		return nil, err
 	}
 	return bson.M{
-		"$set": bson.M{assingedToField: oid},
+		"$set": bson.M{assignedToField: oid},
 	}, nil
 }
 func (u TaskAssignationUpdater) ToExpression() expression.UpdateBuilder {
-	return expression.Set(expression.Name(assingedToField), expression.Value(u.AssignedTo))
+	return expression.Set(expression.Name(assignedToField), expression.Value(u.AssignedTo))
 }
 
 type AddTaskToProjectUpdater struct {

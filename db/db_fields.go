@@ -3,7 +3,7 @@ package db
 const (
 	enabledField           = "enabled"
 	completedField         = "completed"
-	assingedToField        = "assignedTo"
+	assignedToField        = "assignedTo"
 	encryptedPasswordField = "encryptedPassword"
 	dueDateField           = "dueDate"
 	tasksField             = "tasks"
