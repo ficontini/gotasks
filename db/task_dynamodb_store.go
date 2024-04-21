@@ -110,9 +110,18 @@ func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, paginat
 	numPages := 0
 	limit := int32(pagination.Limit)
 	page := int(pagination.Page)
+	expr, err := expression.NewBuilder().WithFilter(filter.ToExpression()).Build()
+	if err != nil {
+		if _, ok := filter.(EmptyFilter); !ok {
+			return nil, err
+		}
+	}
 	paginator := dynamodb.NewScanPaginator(s.client, &dynamodb.ScanInput{
-		TableName: s.table,
-		Limit:     &limit,
+		TableName:                 s.table,
+		Limit:                     &limit,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
 	})
 	for paginator.HasMorePages() {
 		res, err := paginator.NextPage(ctx)
