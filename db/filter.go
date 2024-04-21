@@ -47,7 +47,6 @@ func (f AssignedToFilter) ToBSON() bson.M {
 	return bson.M{assignedToField: oid}
 }
 
-// TODO: review
 func (f AssignedToFilter) ToExpression() expression.ConditionBuilder {
 	return expression.Equal(expression.Name(assignedToField), expression.Value(f.AssignedTo))
 }
@@ -68,5 +67,5 @@ func (f UserTasksFilter) ToBSON() bson.M {
 
 // TODO:
 func (f UserTasksFilter) ToExpression() expression.ConditionBuilder {
-	return expression.ConditionBuilder{}
+	return expression.And(f.CompletedFilter.ToExpression(), f.AssignedToFilter.ToExpression())
 }
