@@ -37,6 +37,9 @@ Resources:
         - 
           AttributeName: ID
           AttributeType: S
+        - 
+          AttributeName: assignedTo
+          AttributeType: S
       KeySchema: 
         - 
           AttributeName: ID
@@ -44,6 +47,18 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+      GlobalSecondaryIndexes: 
+      - 
+        IndexName: "AssignedToGSI"
+        KeySchema: 
+          - 
+            AttributeName: assignedTo
+            KeyType: HASH
+        Projection: 
+          ProjectionType: ALL
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1 
       TableName: tasks
   ProjectTable: 
       Type: AWS::DynamoDB::Table

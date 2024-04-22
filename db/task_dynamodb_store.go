@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -12,17 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
-const ReturnAllOld = "ALL_OLD"
+const (
+	ReturnAllOld  = "ALL_OLD"
+	assignedToGSI = "AssignedToGSI"
+)
 
 type DynamoDBTaskStore struct {
-	client *dynamodb.Client
-	table  *string
+	client        *dynamodb.Client
+	table         *string
+	assignedToGSI *string
 }
 
 func NewDynamoDBTaskStore(client *dynamodb.Client) *DynamoDBTaskStore {
 	return &DynamoDBTaskStore{
-		client: client,
-		table:  aws.String(taskColl),
+		client:        client,
+		table:         aws.String(taskColl),
+		assignedToGSI: aws.String(assignedToGSI),
 	}
 }
 
@@ -103,41 +109,49 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 	return task, nil
 }
 
-// TODO: Pagination
-// Filter
+// TODO: Review
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
 	var tasks []*types.Task
-	numPages := 0
-	limit := int32(pagination.Limit)
-	page := int(pagination.Page)
-	expr, err := expression.NewBuilder().WithFilter(filter.ToExpression()).Build()
-	if err != nil {
-		if _, ok := filter.(EmptyFilter); !ok {
-			return nil, err
-		}
-	}
-	paginator := dynamodb.NewScanPaginator(s.client, &dynamodb.ScanInput{
-		TableName:                 s.table,
-		Limit:                     &limit,
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
+	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+		TableName: s.table,
 	})
-	for paginator.HasMorePages() {
-		res, err := paginator.NextPage(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if numPages == page {
-			if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
-				return nil, err
-			}
-			return tasks, nil
-		}
-		numPages++
+	if err != nil {
+		fmt.Println("err", err)
+		return nil, err
 	}
-	return nil, ErrorNotFound
+	if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
+		fmt.Println("hiiii", err)
+		return nil, err
+	}
+	return tasks, nil
 }
+
+// func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
+// 	expr, err := filter.ToExpression()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+// 		TableName:                 s.table,
+// 		IndexName:                 s.assignedToGSI,
+// 		ExpressionAttributeNames:  expr.Names(),
+// 		ExpressionAttributeValues: expr.Values(),
+// 		KeyConditionExpression:    expr.KeyCondition(),
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	var tasks []*types.Task
+// 	if len(res.Items) == 0 {
+// 		return tasks, nil
+// 	}
+// 	if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
+// 		return nil, err
+// 	}
+// 	return tasks, nil
+
+// }
+
 func (s *DynamoDBTaskStore) Drop(ctx context.Context) error {
 	_, err := s.client.DeleteTable(ctx, &dynamodb.DeleteTableInput{
 		TableName: s.table,
