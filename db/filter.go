@@ -12,15 +12,17 @@ type Filter interface {
 	ToBSON() bson.M
 	ToExpression() (expression.Expression, error)
 }
-type EmptyFilter struct{}
+type EmptyFilter struct {
+	DataType string
+}
 
 func (f EmptyFilter) ToBSON() bson.M {
 	return map[string]any{}
 }
 
-// TODO: Review
 func (f EmptyFilter) ToExpression() (expression.Expression, error) {
-	return expression.Expression{}, nil
+	KeyCond := expression.Key(dataTypeField).Equal(expression.Value(f.DataType))
+	return expression.NewBuilder().WithKeyCondition(KeyCond).Build()
 }
 
 type CompletedFilter struct {

@@ -13,11 +13,13 @@ import (
 )
 
 const emailGSI = "EmailGSI"
+const dataTypeGSI = "dataTypeGSI"
 
 type DynamoDBUserStore struct {
 	client   *dynamodb.Client
 	table    *string
 	emailGSI *string
+	queryGSI *string
 }
 
 func NewDynamoDBUserStore(client *dynamodb.Client) *DynamoDBUserStore {
@@ -25,6 +27,7 @@ func NewDynamoDBUserStore(client *dynamodb.Client) *DynamoDBUserStore {
 		client:   client,
 		table:    aws.String(userColl),
 		emailGSI: aws.String(emailGSI),
+		queryGSI: aws.String(dataTypeGSI),
 	}
 }
 func (s *DynamoDBUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
@@ -88,19 +91,26 @@ func (s *DynamoDBUserStore) GetUserByEmail(ctx context.Context, email string) (*
 	return user, nil
 }
 func (s *DynamoDBUserStore) GetUsers(ctx context.Context, filter Filter, pagination Pagination) ([]*types.User, error) {
-	res, err := s.client.Scan(ctx, &dynamodb.ScanInput{
-		TableName: s.table,
+	expr, err := filter.ToExpression()
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:                 s.table,
+		IndexName:                 s.queryGSI,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
 	})
 	if err != nil {
 		return nil, err
 	}
 	var users []*types.User
-	for _, item := range res.Items {
-		var user *types.User
-		if err := attributevalue.UnmarshalMap(item, &user); err != nil {
-			return nil, ErrorNotFound
-		}
-		users = append(users, user)
+	if len(res.Items) == 0 {
+		return users, nil
+	}
+	if err := attributevalue.UnmarshalListOfMaps(res.Items, &users); err != nil {
+		return nil, err
 	}
 	return users, nil
 }

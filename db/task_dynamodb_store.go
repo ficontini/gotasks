@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -111,46 +110,30 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 
 // TODO: Review
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
-	var tasks []*types.Task
-	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
-		TableName: s.table,
-	})
+	expr, err := filter.ToExpression()
 	if err != nil {
-		fmt.Println("err", err)
 		return nil, err
 	}
+	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:                 s.table,
+		IndexName:                 s.assignedToGSI,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	var tasks []*types.Task
+	if len(res.Items) == 0 {
+		return tasks, nil
+	}
 	if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
-		fmt.Println("hiiii", err)
 		return nil, err
 	}
 	return tasks, nil
+
 }
-
-// func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
-// 	expr, err := filter.ToExpression()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
-// 		TableName:                 s.table,
-// 		IndexName:                 s.assignedToGSI,
-// 		ExpressionAttributeNames:  expr.Names(),
-// 		ExpressionAttributeValues: expr.Values(),
-// 		KeyConditionExpression:    expr.KeyCondition(),
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var tasks []*types.Task
-// 	if len(res.Items) == 0 {
-// 		return tasks, nil
-// 	}
-// 	if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
-// 		return nil, err
-// 	}
-// 	return tasks, nil
-
-// }
 
 func (s *DynamoDBTaskStore) Drop(ctx context.Context) error {
 	_, err := s.client.DeleteTable(ctx, &dynamodb.DeleteTableInput{

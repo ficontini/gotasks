@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	UserDataType        = "user"
 	minPasswordLen      = 7
 	minFirstNameLen     = 5
 	minLastNameLen      = 5
@@ -22,6 +23,7 @@ type User struct {
 	EncryptedPassword string `bson:"encryptedPassword" dynamodbav:"encryptedPassword" json:"-"`
 	IsAdmin           bool   `bson:"isAdmin" dynamodbav:"isAdmin" json:"-"`
 	Enabled           bool   `bson:"enabled" dynamodbav:"enabled" json:"-"`
+	DataType          string `bson:"-" dynamodbav:"dataType" json:"-"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {
@@ -34,6 +36,7 @@ func NewUserFromParams(params CreateUserParams) (*User, error) {
 		LastName:          params.LastName,
 		Email:             params.Email,
 		EncryptedPassword: encpw,
+		DataType:          UserDataType,
 	}, nil
 }
 func (u *User) IsPasswordValid(pw string) bool {

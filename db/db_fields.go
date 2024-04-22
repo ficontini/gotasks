@@ -11,4 +11,5 @@ const (
 	emailField             = "email"
 	mongoIDField           = "_id"
 	dynamoIDField          = "ID"
+	dataTypeField          = "dataType"
 )

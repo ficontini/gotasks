@@ -18,7 +18,7 @@ var (
 )
 
 func main() {
-	store, err := db.NewDynamoDBStore()
+	store, err := db.NewStore()
 	if err != nil {
 		panic(err)
 	}
