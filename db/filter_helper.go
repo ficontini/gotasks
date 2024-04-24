@@ -1,20 +1,20 @@
 package db
 
-func NewCompletedFilter(completed *bool) Filter {
-	if completed != nil {
-		return CompletedFilter{Completed: *completed}
-	} else {
-		return EmptyFilter{}
-	}
-}
-func NewUserTasksFilter(completed *bool, id string) (Filter, error) {
-	assignedToFilter := AssignedToFilter{AssignedTo: id}
-	if completed != nil {
-		return UserTasksFilter{
-			CompletedFilter:  CompletedFilter{Completed: *completed},
-			AssignedToFilter: assignedToFilter,
-		}, nil
+import "github.com/ficontini/gotasks/types"
 
+func NewTaskCompletedFilter(completed *bool) Filter {
+	dataType := NewDataType(types.TaskDataType)
+	if completed != nil {
+		return NewSimpleFilter(dataType, NewCompletedFieldFilterer(*completed))
 	}
-	return assignedToFilter, nil
+	return NewEmptyFilter(dataType)
+}
+
+func NewUserTasksFilter(completed *bool, id string) Filter {
+	dataType := NewDataType(types.TaskDataType)
+	fieldFiltered1 := NewAssigneFieldFilterer(id)
+	if completed != nil {
+		return NewCompositeFilter(dataType, fieldFiltered1, NewCompletedFieldFilterer(*completed))
+	}
+	return NewSimpleFilter(dataType, fieldFiltered1)
 }

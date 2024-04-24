@@ -40,14 +40,12 @@ type TaskQueryParams struct {
 }
 
 func (svc *TaskService) GetTasks(ctx context.Context, params *TaskQueryParams) ([]*types.Task, error) {
-	return svc.store.Task.GetTasks(ctx, db.NewCompletedFilter(params.Completed), &params.Pagination)
+	filter := db.NewTaskCompletedFilter(params.Completed)
+	return svc.store.Task.GetTasks(ctx, filter, &params.Pagination)
 }
 
 func (svc *TaskService) GetTasksByUserID(ctx context.Context, id string, params TaskQueryParams) ([]*types.Task, error) {
-	filter, err := db.NewUserTasksFilter(params.Completed, id)
-	if err != nil {
-		return nil, err
-	}
+	filter := db.NewUserTasksFilter(params.Completed, id)
 	return svc.store.Task.GetTasks(ctx, filter, &params.Pagination)
 }
 func (svc *TaskService) DeleteTask(ctx context.Context, id string) error {

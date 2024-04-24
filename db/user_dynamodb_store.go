@@ -90,30 +90,48 @@ func (s *DynamoDBUserStore) GetUserByEmail(ctx context.Context, email string) (*
 	}
 	return user, nil
 }
+
+// TODO: Review
 func (s *DynamoDBUserStore) GetUsers(ctx context.Context, filter Filter, pagination Pagination) ([]*types.User, error) {
 	expr, err := filter.ToExpression()
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+	start, limit := pagination.generatePaginationForDynamoDB()
+	queryInput := &dynamodb.QueryInput{
 		TableName:                 s.table,
 		IndexName:                 s.queryGSI,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
-	})
-	if err != nil {
-		return nil, err
+		Limit:                     aws.Int32(int32(limit)),
+	}
+	var collectiveResult []map[string]dynamodbtypes.AttributeValue
+	paginator := dynamodb.NewQueryPaginator(s.client, queryInput)
+	for {
+		if !paginator.HasMorePages() {
+			break
+		}
+		singlePage, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		collectiveResult = append(collectiveResult, singlePage.Items...)
+		if len(collectiveResult) >= (start * limit) {
+			break
+		}
 	}
 	var users []*types.User
-	if len(res.Items) == 0 {
+	if start > len(collectiveResult) {
 		return users, nil
 	}
-	if err := attributevalue.UnmarshalListOfMaps(res.Items, &users); err != nil {
+	endIdx := min(start+limit, len(collectiveResult))
+	if err := attributevalue.UnmarshalListOfMaps(collectiveResult[start:endIdx], &users); err != nil {
 		return nil, err
 	}
 	return users, nil
 }
+
 func (s *DynamoDBUserStore) Update(ctx context.Context, idStr string, params Update) error {
 	key, err := GetKey(idStr)
 	if err != nil {
@@ -147,4 +165,11 @@ func (s *DynamoDBUserStore) Drop(ctx context.Context) error {
 		TableName: s.table,
 	})
 	return err
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

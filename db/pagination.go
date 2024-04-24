@@ -31,11 +31,11 @@ func (p *Pagination) generatePagination() (int64, int64) {
 	limit := p.Limit
 	return skip, limit
 }
-func (p *Pagination) generatePaginationForDynamoDB() (int32, *int32) {
+func (p *Pagination) generatePaginationForDynamoDB() (int, int) {
 	p.SetDefaults()
-	offset := int32((p.Page - 1) * p.Limit)
-	limit := int32(p.Limit)
-	return offset, &limit
+	offset := int((p.Page - 1) * p.Limit)
+	limit := int(p.Limit)
+	return offset, limit
 }
 
 func (p *Pagination) getOptions() *options.FindOptions {

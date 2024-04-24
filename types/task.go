@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const TaskDataType = "task"
+
 type Task struct {
 	ID          string    `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
 	Title       string    `bson:"title" dynamodbav:"title" json:"title"`

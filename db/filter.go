@@ -1,11 +1,8 @@
 package db
 
 import (
-	"log"
-
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Filter interface {
@@ -13,69 +10,68 @@ type Filter interface {
 	ToExpression() (expression.Expression, error)
 }
 type EmptyFilter struct {
-	DataType string
+	DataType DataTyper
 }
 
+func NewEmptyFilter(dataType DataTyper) Filter {
+	return &EmptyFilter{
+		DataType: dataType,
+	}
+}
 func (f EmptyFilter) ToBSON() bson.M {
-	return map[string]any{}
+	return bson.M{}
 }
-
 func (f EmptyFilter) ToExpression() (expression.Expression, error) {
-	KeyCond := expression.Key(dataTypeField).Equal(expression.Value(f.DataType))
+	KeyCond := f.DataType.GetKeyCondition()
 	return expression.NewBuilder().WithKeyCondition(KeyCond).Build()
 }
 
-type CompletedFilter struct {
-	Completed bool
+type SimpleFilter struct {
+	DataType DataTyper
+	Field    FieldFilterer
 }
 
-func (f CompletedFilter) ToBSON() bson.M {
-	return bson.M{completedField: f.Completed}
-}
-func (f CompletedFilter) getConditionBuilder() expression.ConditionBuilder {
-	return expression.Equal(expression.Name(completedField), expression.Value(f.Completed))
-}
-func (f CompletedFilter) ToExpression() (expression.Expression, error) {
-	filter := expression.Equal(expression.Name(completedField), expression.Value(f.Completed))
-	return expression.NewBuilder().WithFilter(filter).Build()
-}
-
-type AssignedToFilter struct {
-	AssignedTo string
-}
-
-// TODO: Review
-func (f AssignedToFilter) ToBSON() bson.M {
-	oid, err := primitive.ObjectIDFromHex(f.AssignedTo)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bson.M{assignedToField: oid}
-}
-func (f AssignedToFilter) getConditionBuilder() expression.ConditionBuilder {
-	return expression.Equal(expression.Name(assignedToField), expression.Value(f.AssignedTo))
-}
-func (f AssignedToFilter) ToExpression() (expression.Expression, error) {
-	KeyCond := expression.Key(assignedToField).Equal(expression.Value(f.AssignedTo))
-	return expression.NewBuilder().WithKeyCondition(KeyCond).Build()
-}
-
-type UserTasksFilter struct {
-	CompletedFilter
-	AssignedToFilter
-}
-
-func (f UserTasksFilter) ToBSON() bson.M {
-	return bson.M{
-		"$and": []bson.M{
-			f.CompletedFilter.ToBSON(),
-			f.AssignedToFilter.ToBSON(),
-		},
+func NewSimpleFilter(dataType DataTyper, field FieldFilterer) Filter {
+	return &SimpleFilter{
+		DataType: dataType,
+		Field:    field,
 	}
 }
+func (f SimpleFilter) ToBSON() bson.M {
+	return f.Field.GetBSONFilter()
+}
 
-// TODO:
-func (f UserTasksFilter) ToExpression() (expression.Expression, error) {
-	filter := expression.And(f.CompletedFilter.getConditionBuilder(), f.AssignedToFilter.getConditionBuilder())
-	return expression.NewBuilder().WithFilter(filter).Build()
+func (f SimpleFilter) ToExpression() (expression.Expression, error) {
+	return buildExpression(f.DataType, f.Field.GetFilter())
+}
+
+type CompositeFilter struct {
+	DataType DataTyper
+	Field1   FieldFilterer
+	Field2   FieldFilterer
+}
+
+func NewCompositeFilter(dataType DataTyper, field1, field2 FieldFilterer) Filter {
+	return &CompositeFilter{
+		DataType: dataType,
+		Field1:   field1,
+		Field2:   field2,
+	}
+}
+func (f CompositeFilter) ToBSON() bson.M {
+	return bson.M{"$and": []bson.M{
+		f.Field1.GetBSONFilter(),
+		f.Field2.GetBSONFilter(),
+	}}
+}
+
+func (f CompositeFilter) ToExpression() (expression.Expression, error) {
+	filter := expression.And(f.Field1.GetFilter(), f.Field2.GetFilter())
+	return buildExpression(f.DataType, filter)
+
+}
+
+func buildExpression(dataType DataTyper, filter expression.ConditionBuilder) (expression.Expression, error) {
+	keyCond := dataType.GetKeyCondition()
+	return expression.NewBuilder().WithFilter(filter).WithKeyCondition(keyCond).Build()
 }

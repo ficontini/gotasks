@@ -91,7 +91,8 @@ type UserQueryParams struct {
 }
 
 func (svc *UserService) GetUsers(ctx context.Context, params UserQueryParams) ([]*types.User, error) {
-	return svc.store.User.GetUsers(ctx, db.EmptyFilter{DataType: types.UserDataType}, params.Pagination)
+	filter := db.EmptyFilter{DataType: &db.DataType{DataType: types.UserDataType}}
+	return svc.store.User.GetUsers(ctx, filter, params.Pagination)
 }
 func (svc *UserService) GetUserByID(ctx context.Context, id string) (*types.User, error) {
 	user, err := svc.store.User.GetUserByID(ctx, id)
