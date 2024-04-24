@@ -25,7 +25,7 @@ var (
 )
 
 func setup(t *testing.T) TestDB {
-	return setupTestMongoDB(t)
+	return setupTestDynamoDB(t)
 }
 
 type TestDB interface {

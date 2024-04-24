@@ -13,7 +13,6 @@ import (
 )
 
 const emailGSI = "EmailGSI"
-const dataTypeGSI = "dataTypeGSI"
 
 type DynamoDBUserStore struct {
 	client   *dynamodb.Client
@@ -125,7 +124,7 @@ func (s *DynamoDBUserStore) GetUsers(ctx context.Context, filter Filter, paginat
 	if start > len(collectiveResult) {
 		return users, nil
 	}
-	endIdx := min(start+limit, len(collectiveResult))
+	endIdx := Min(start+limit, len(collectiveResult))
 	if err := attributevalue.UnmarshalListOfMaps(collectiveResult[start:endIdx], &users); err != nil {
 		return nil, err
 	}
@@ -167,7 +166,7 @@ func (s *DynamoDBUserStore) Drop(ctx context.Context) error {
 	return err
 }
 
-func min(a, b int) int {
+func Min(a, b int) int {
 	if a < b {
 		return a
 	}

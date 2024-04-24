@@ -54,6 +54,7 @@ func NewAssigneFieldFilterer(assignedTo string) FieldFilterer {
 	}
 }
 func (c *AssigneFieldFilterer) GetBSONFilter() bson.M {
+	//TODO: Review how to handle this error
 	oid, err := primitive.ObjectIDFromHex(c.AssignedTo)
 	if err != nil {
 		log.Fatal(err)

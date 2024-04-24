@@ -13,21 +13,20 @@ import (
 )
 
 const (
-	ReturnAllOld  = "ALL_OLD"
-	assignedToGSI = "AssignedToGSI"
+	ReturnAllOld = "ALL_OLD"
 )
 
 type DynamoDBTaskStore struct {
-	client        *dynamodb.Client
-	table         *string
-	assignedToGSI *string
+	client *dynamodb.Client
+	table  *string
+	gsi    *string
 }
 
 func NewDynamoDBTaskStore(client *dynamodb.Client) *DynamoDBTaskStore {
 	return &DynamoDBTaskStore{
-		client:        client,
-		table:         aws.String(taskColl),
-		assignedToGSI: aws.String(assignedToGSI),
+		client: client,
+		table:  aws.String(taskColl),
+		gsi:    aws.String(dataTypeGSI),
 	}
 }
 
@@ -108,27 +107,43 @@ func (s *DynamoDBTaskStore) GetTaskByID(ctx context.Context, id string) (*types.
 	return task, nil
 }
 
-// TODO: Review
+// TODO: review
 func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.Task, error) {
 	expr, err := filter.ToExpression()
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.client.Query(ctx, &dynamodb.QueryInput{
+	start, limit := pagination.generatePaginationForDynamoDB()
+	queryInput := &dynamodb.QueryInput{
 		TableName:                 s.table,
-		IndexName:                 s.assignedToGSI,
+		IndexName:                 s.gsi,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
-	})
-	if err != nil {
-		return nil, err
+		FilterExpression:          expr.Filter(),
+		Limit:                     aws.Int32(int32(limit)),
+	}
+	var collectiveResult []map[string]dynamodbtypes.AttributeValue
+	paginator := dynamodb.NewQueryPaginator(s.client, queryInput)
+	for {
+		if !paginator.HasMorePages() {
+			break
+		}
+		singlePage, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		collectiveResult = append(collectiveResult, singlePage.Items...)
+		if len(collectiveResult) >= (start * limit) {
+			break
+		}
 	}
 	var tasks []*types.Task
-	if len(res.Items) == 0 {
+	if start > len(collectiveResult) {
 		return tasks, nil
 	}
-	if err := attributevalue.UnmarshalListOfMaps(res.Items, &tasks); err != nil {
+	endIdx := min(start+limit, len(collectiveResult))
+	if err := attributevalue.UnmarshalListOfMaps(collectiveResult[start:endIdx], &tasks); err != nil {
 		return nil, err
 	}
 	return tasks, nil

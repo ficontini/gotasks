@@ -15,6 +15,7 @@ type Task struct {
 	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
 	AssignedTo  string    `bson:"assignedTo" dynamodbav:"assignedTo" json:"assignedTo,omitempty"`
 	ProjectID   string    `bson:"projectID" dynamodbav:"projectID" json:"projectID,omitempty"`
+	DataType    string    `bson:"-" dynamodbav:"dataType" json:"-"`
 }
 
 type NewTaskParams struct {
@@ -28,6 +29,7 @@ func NewTaskFromParams(params NewTaskParams) *Task {
 		Title:       params.Title,
 		Description: params.Description,
 		DueDate:     params.DueDate,
+		DataType:    TaskDataType,
 	}
 }
 func (params NewTaskParams) Validate() map[string]string {

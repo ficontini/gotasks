@@ -33,7 +33,7 @@ Resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
       - 
-        IndexName: "dataTypeGSI"
+        IndexName: "DataTypeGSI"
         KeySchema: 
           - 
             AttributeName: dataType
@@ -53,6 +53,9 @@ Resources:
         - 
           AttributeName: ID
           AttributeType: S
+        -
+          AttributeName: dataType
+          AttributeType: S
       KeySchema: 
         - 
           AttributeName: ID
@@ -60,6 +63,18 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+      GlobalSecondaryIndexes: 
+      - 
+        IndexName: "DataTypeGSI"
+        KeySchema: 
+          - 
+            AttributeName: dataType
+            KeyType: HASH
+        Projection: 
+          ProjectionType: ALL
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
       TableName: tasks
   ProjectTable: 
       Type: AWS::DynamoDB::Table

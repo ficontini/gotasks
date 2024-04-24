@@ -12,7 +12,10 @@ import (
 	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const AwsProfileEnvName = "AWS_PROFILE"
+const (
+	AwsProfileEnvName = "AWS_PROFILE"
+	dataTypeGSI       = "DataTypeGSI"
+)
 
 var PROFILE string
 

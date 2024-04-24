@@ -13,22 +13,15 @@ import (
 )
 
 func main() {
-	store := seedMongo()
-	for i := 0; i < 50; i++ {
+	store := seedDynamoDB()
+	for i := 0; i < 20; i++ {
 		title := fmt.Sprintf("task%d", i)
 		description := fmt.Sprintf("description of task%d", i)
 		fixtures.AddTask(store, title, description, time.Now().AddDate(0, 0, rand.Intn(10)), rand.Intn(2) == 0)
 	}
 	fixtures.AddUser(store, "james", "foobaz", "supersecurepassword", false, true)
 	fixtures.AddUser(store, "admin", "foobaz", "supersecurepassword", true, true)
-	// fixtures.AddUser(store, "luca", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "frank", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "doni", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "toni", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "antonio", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "ferland", "foobaz", "supersecurepassword", false, true)
-	// fixtures.AddUser(store, "admin2", "foobaz", "supersecurepassword", true, true)
-	// fixtures.AddUser(store, "enrique", "foobaz", "supersecurepassword", false, true)
+
 	fmt.Println("seeding the database")
 }
 func seedDynamoDB() *db.Store {

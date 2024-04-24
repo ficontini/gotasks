@@ -24,12 +24,12 @@ func AddProject(store *db.Store, title, description string, userID string, tasks
 	return insertedProject
 }
 func AddTask(store *db.Store, title, description string, dueTo time.Time, completed bool) *types.Task {
-	task := &types.Task{
+	task := types.NewTaskFromParams(types.NewTaskParams{
 		Title:       title,
 		Description: description,
 		DueDate:     dueTo,
-		Completed:   completed,
-	}
+	})
+	task.Completed = completed
 	insertedTask, err := store.Task.InsertTask(context.Background(), task)
 	if err != nil {
 		log.Fatal(err)
