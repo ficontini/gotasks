@@ -58,3 +58,40 @@ func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
 	}
 	return map[string]dynamodbtypes.AttributeValue{dynamoIDField: id}, nil
 }
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+type DynamoDBQueryOptions struct {
+	QueryInput *dynamodb.QueryInput
+	Pagination *Pagination
+}
+
+func NewDynamoDBQueryOptions(queryInput *dynamodb.QueryInput, pagination *Pagination) *DynamoDBQueryOptions {
+	return &DynamoDBQueryOptions{
+		QueryInput: queryInput,
+		Pagination: pagination,
+	}
+}
+
+func PaginatedDynamoDBQuery(ctx context.Context, client *dynamodb.Client, opts *DynamoDBQueryOptions) ([]map[string]dynamodbtypes.AttributeValue, error) {
+	var collectiveResult []map[string]dynamodbtypes.AttributeValue
+	paginator := dynamodb.NewQueryPaginator(client, opts.QueryInput)
+	for {
+		if !paginator.HasMorePages() {
+			break
+		}
+		singlePage, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		collectiveResult = append(collectiveResult, singlePage.Items...)
+		if len(collectiveResult) >= (int(opts.Pagination.Page) * int(opts.Pagination.Limit)) {
+			break
+		}
+	}
+	return collectiveResult, nil
+}

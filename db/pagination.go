@@ -1,8 +1,6 @@
 package db
 
 import (
-	"fmt"
-
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -12,11 +10,11 @@ const (
 )
 
 type Pagination struct {
-	Page  int64
-	Limit int64
+	Page   int64
+	Limit  int64
+	Offset int
 }
 
-// TODO: Review
 func (p *Pagination) SetDefaults() {
 	if p.Limit <= 0 {
 		p.Limit = DEFAULT_LIMIT
@@ -31,13 +29,6 @@ func (p *Pagination) generatePagination() (int64, int64) {
 	limit := p.Limit
 	return skip, limit
 }
-func (p *Pagination) generatePaginationForDynamoDB() (int, int) {
-	p.SetDefaults()
-	offset := int((p.Page - 1) * p.Limit)
-	limit := int(p.Limit)
-	return offset, limit
-}
-
 func (p *Pagination) getOptions() *options.FindOptions {
 	skip, limit := p.generatePagination()
 	opts := &options.FindOptions{}
@@ -45,7 +36,7 @@ func (p *Pagination) getOptions() *options.FindOptions {
 	opts.SetLimit(limit)
 	return opts
 }
-func (p *Pagination) getQuery() string {
-	skip, limit := p.generatePagination()
-	return fmt.Sprintf("LIMIT %d OFFSET %d", limit, skip)
+func (p *Pagination) generatePaginationForDynamoDB() {
+	p.SetDefaults()
+	p.Offset = (int(p.Page) - 1) * int(p.Limit)
 }

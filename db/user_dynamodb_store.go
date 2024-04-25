@@ -91,40 +91,31 @@ func (s *DynamoDBUserStore) GetUserByEmail(ctx context.Context, email string) (*
 }
 
 // TODO: Review
-func (s *DynamoDBUserStore) GetUsers(ctx context.Context, filter Filter, pagination Pagination) ([]*types.User, error) {
+func (s *DynamoDBUserStore) GetUsers(ctx context.Context, filter Filter, pagination *Pagination) ([]*types.User, error) {
 	expr, err := filter.ToExpression()
 	if err != nil {
 		return nil, err
 	}
-	start, limit := pagination.generatePaginationForDynamoDB()
+	pagination.generatePaginationForDynamoDB()
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 s.table,
 		IndexName:                 s.queryGSI,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
-		Limit:                     aws.Int32(int32(limit)),
+		Limit:                     aws.Int32(int32(pagination.Limit)),
 	}
-	var collectiveResult []map[string]dynamodbtypes.AttributeValue
-	paginator := dynamodb.NewQueryPaginator(s.client, queryInput)
-	for {
-		if !paginator.HasMorePages() {
-			break
-		}
-		singlePage, err := paginator.NextPage(ctx)
-		if err != nil {
-			return nil, err
-		}
-		collectiveResult = append(collectiveResult, singlePage.Items...)
-		if len(collectiveResult) >= (start * limit) {
-			break
-		}
+	opts := NewDynamoDBQueryOptions(queryInput, pagination)
+	collectiveResult, err := PaginatedDynamoDBQuery(ctx, s.client, opts)
+	if err != nil {
+		return nil, err
 	}
+	start := pagination.Offset
 	var users []*types.User
 	if start > len(collectiveResult) {
 		return users, nil
 	}
-	endIdx := Min(start+limit, len(collectiveResult))
+	endIdx := Min(start+int(pagination.Limit), len(collectiveResult))
 	if err := attributevalue.UnmarshalListOfMaps(collectiveResult[start:endIdx], &users); err != nil {
 		return nil, err
 	}
@@ -164,11 +155,4 @@ func (s *DynamoDBUserStore) Drop(ctx context.Context) error {
 		TableName: s.table,
 	})
 	return err
-}
-
-func Min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

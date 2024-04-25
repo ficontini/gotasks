@@ -113,7 +113,8 @@ func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, paginat
 	if err != nil {
 		return nil, err
 	}
-	start, limit := pagination.generatePaginationForDynamoDB()
+	pagination.generatePaginationForDynamoDB()
+
 	queryInput := &dynamodb.QueryInput{
 		TableName:                 s.table,
 		IndexName:                 s.gsi,
@@ -121,28 +122,19 @@ func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, paginat
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		FilterExpression:          expr.Filter(),
-		Limit:                     aws.Int32(int32(limit)),
+		Limit:                     aws.Int32(int32(pagination.Limit)),
 	}
-	var collectiveResult []map[string]dynamodbtypes.AttributeValue
-	paginator := dynamodb.NewQueryPaginator(s.client, queryInput)
-	for {
-		if !paginator.HasMorePages() {
-			break
-		}
-		singlePage, err := paginator.NextPage(ctx)
-		if err != nil {
-			return nil, err
-		}
-		collectiveResult = append(collectiveResult, singlePage.Items...)
-		if len(collectiveResult) >= (start * limit) {
-			break
-		}
+	opts := NewDynamoDBQueryOptions(queryInput, pagination)
+	collectiveResult, err := PaginatedDynamoDBQuery(ctx, s.client, opts)
+	if err != nil {
+		return nil, err
 	}
+	start := pagination.Offset
 	var tasks []*types.Task
 	if start > len(collectiveResult) {
 		return tasks, nil
 	}
-	endIdx := min(start+limit, len(collectiveResult))
+	endIdx := min(start+int(pagination.Limit), len(collectiveResult))
 	if err := attributevalue.UnmarshalListOfMaps(collectiveResult[start:endIdx], &tasks); err != nil {
 		return nil, err
 	}
