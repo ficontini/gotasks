@@ -25,17 +25,17 @@ func NewResourceResponse(data any, results int, page int64) ResourceResponse {
 }
 
 type Handler struct {
-	Auth *AuthHandler
-	User *UserHandler
-	Task *TaskHandler
-	//Project *ProjectHandler
+	Auth    *AuthHandler
+	User    *UserHandler
+	Task    *TaskHandler
+	Project *ProjectHandler
 }
 
 func NewHandler(svc *service.Service) *Handler {
 	return &Handler{
-		Auth: NewAuthHandler(svc.Auth),
-		User: NewUserHandler(svc.User),
-		Task: NewTaskHandler(svc.Task),
-		//Project: NewProjectHandler(svc.Project),
+		Auth:    NewAuthHandler(svc.Auth),
+		User:    NewUserHandler(svc.User),
+		Task:    NewTaskHandler(svc.Task),
+		Project: NewProjectHandler(svc.Project),
 	}
 }
