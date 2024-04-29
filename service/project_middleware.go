@@ -8,17 +8,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type LogMiddleware struct {
+type ProjectLogMiddleware struct {
 	next ProjectServicer
 }
 
-func NewLogMiddleware(next ProjectServicer) ProjectServicer {
-	return &LogMiddleware{
+func NewProjectLogMiddleware(next ProjectServicer) ProjectServicer {
+	return &ProjectLogMiddleware{
 		next: next,
 	}
 }
 
-func (m *LogMiddleware) CreateProject(ctx context.Context, params types.NewProjectParams, userID string) (project *types.Project, err error) {
+func (m *ProjectLogMiddleware) CreateProject(ctx context.Context, params types.NewProjectParams, userID string) (project *types.Project, err error) {
 	defer func(start time.Time) {
 		var (
 			projectID string
@@ -39,7 +39,7 @@ func (m *LogMiddleware) CreateProject(ctx context.Context, params types.NewProje
 	project, err = m.next.CreateProject(ctx, params, userID)
 	return project, err
 }
-func (m *LogMiddleware) GetProjectByID(ctx context.Context, id string) (project *types.Project, err error) {
+func (m *ProjectLogMiddleware) GetProjectByID(ctx context.Context, id string) (project *types.Project, err error) {
 	defer func(start time.Time) {
 		var (
 			title  string
@@ -61,14 +61,14 @@ func (m *LogMiddleware) GetProjectByID(ctx context.Context, id string) (project 
 	return project, err
 
 }
-func (m *LogMiddleware) AddTask(ctx context.Context, projectID string, params types.AddTaskParams) (err error) {
+func (m *ProjectLogMiddleware) AddTask(ctx context.Context, projectID string, params types.AddTaskParams) (err error) {
 	defer func(start time.Time) {
 		logrus.WithFields(logrus.Fields{
 			"took":      time.Since(start),
 			"projectID": projectID,
 			"taskID":    params.TaskID,
 			"err":       err,
-		}).Info("Add task")
+		}).Info("Add task to project")
 	}(time.Now())
 	err = m.next.AddTask(ctx, projectID, params)
 	return err

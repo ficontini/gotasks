@@ -8,11 +8,42 @@ import (
 	"github.com/ficontini/gotasks/types"
 )
 
+type TaskGetter interface {
+	GetTaskByID(context.Context, string) (*types.Task, error)
+	GetTasks(context.Context, *TaskQueryParams) ([]*types.Task, error)
+	GetTasksByUserID(context.Context, string, TaskQueryParams) ([]*types.Task, error)
+}
+
+type TaskCreator interface {
+	CreateTask(context.Context, types.NewTaskParams) (*types.Task, error)
+}
+
+type TaskDeleter interface {
+	DeleteTask(context.Context, string) error
+}
+type TaskUpdater interface {
+	CompleteTask(context.Context, types.UpdateTaskRequest) error
+	UpdateDueDate(context.Context, string, types.UpdateDueDateTaskRequest) error
+}
+
+type TaskAssigner interface {
+	AssignTaskToSelf(context.Context, types.UpdateTaskRequest) error
+	AssignTaskToUser(context.Context, types.UpdateTaskRequest) error
+}
+
+type TaskServicer interface {
+	TaskGetter
+	TaskCreator
+	TaskDeleter
+	TaskUpdater
+	TaskAssigner
+}
+
 type TaskService struct {
 	store *db.Store
 }
 
-func NewTaskService(store *db.Store) *TaskService {
+func NewTaskService(store *db.Store) TaskServicer {
 	return &TaskService{
 		store: store,
 	}

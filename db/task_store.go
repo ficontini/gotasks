@@ -9,13 +9,15 @@ import (
 const taskColl = "tasks"
 
 type TaskStore interface {
-	InsertTask(context.Context, *types.Task) (*types.Task, error)
+	TaskInserter
 	TaskUpdater
 	TaskGetter
 	Deleter
 	Dropper
 }
-
+type TaskInserter interface {
+	InsertTask(context.Context, *types.Task) (*types.Task, error)
+}
 type TaskUpdater interface {
 	Update(context.Context, string, Update) error
 }

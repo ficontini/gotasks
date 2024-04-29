@@ -18,10 +18,16 @@ type UserGetter interface {
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUserByEmail(context.Context, string) (*types.User, error)
 }
+type UserInserter interface {
+	InsertUser(context.Context, *types.User) (*types.User, error)
+}
+type UserUpdater interface {
+	Update(context.Context, string, Update) error
+}
 type UserStore interface {
 	UserGetter
-	InsertUser(context.Context, *types.User) (*types.User, error)
-	Update(context.Context, string, Update) error
+	UserInserter
+	UserUpdater
 	Dropper
 }
 
