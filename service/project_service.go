@@ -13,11 +13,16 @@ var (
 	ErrProjectNotFound       = errors.New("project resource not found")
 )
 
+type ProjectServicer interface {
+	CreateProject(context.Context, types.NewProjectParams, string) (*types.Project, error)
+	GetProjectByID(context.Context, string) (*types.Project, error)
+	AddTask(context.Context, string, types.AddTaskParams) error
+}
 type ProjectService struct {
 	store *db.Store
 }
 
-func NewProjectService(store *db.Store) *ProjectService {
+func NewProjectService(store *db.Store) ProjectServicer {
 	return &ProjectService{
 		store: store,
 	}

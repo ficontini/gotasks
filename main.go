@@ -24,12 +24,14 @@ func main() {
 	}
 	var (
 		handler = api.NewHandler(service.NewService(store))
+		svc     = service.NewProjectService(store)
 		app     = fiber.New(config)
 		auth    = app.Group("/api")
 		apiv1   = app.Group("/api/v1", api.JWTAuthentication(service.NewAuthService(store)))
 		admin   = apiv1.Group("/admin", api.AdminAuth)
 	)
-
+	svc = service.NewLogMiddleware(svc)
+	projectHandler := api.NewProjectHandler(svc)
 	auth.Post("/auth", handler.Auth.HandleAuthenticate)
 
 	auth.Post("/user", handler.User.HandlePostUser)
@@ -52,9 +54,9 @@ func main() {
 	admin.Put("/user/:id/enable", handler.User.HandleEnableUser)
 	admin.Put("/user/:id/disable", handler.User.HandleDisableUser)
 
-	apiv1.Post("/project", handler.Project.HandlePostProject)
-	apiv1.Get("/project/:id", handler.Project.HandleGetProject)
-	apiv1.Post("/project/:id/task", handler.Project.HandlePostTask)
+	apiv1.Post("/project", projectHandler.HandlePostProject)
+	apiv1.Get("/project/:id", projectHandler.HandleGetProject)
+	apiv1.Post("/project/:id/task", projectHandler.HandlePostTask)
 
 	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
 	log.Fatal(app.Listen(listenAddr))
