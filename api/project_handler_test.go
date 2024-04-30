@@ -27,8 +27,11 @@ func TestPostProjectSuccess(t *testing.T) {
 		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(store, "james", "foo", "supersecure", false, true)
 		auth           = fixtures.AddAuth(store, user.ID)
-		token          = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := types.NewProjectParams{
 		Title:       "test-project",
@@ -61,8 +64,11 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 		projectHandler = NewProjectHandler(projectService)
 		user           = fixtures.AddUser(store, "james", "foo", "supersecure", false, true)
 		auth           = fixtures.AddAuth(store, user.ID)
-		token          = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := types.NewProjectParams{
 		Title:       "",
@@ -88,8 +94,11 @@ func TestAddTaskToProjectSuccess(t *testing.T) {
 		task           = fixtures.AddTask(store, "task01", "description of task01", time.Now().AddDate(0, 0, 2), false)
 		project        = fixtures.AddProject(store, "test-project", "test-project-0001", user.ID, []string{})
 		auth           = fixtures.AddAuth(store, user.ID)
-		token          = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiv1.Post("project/:id/task", projectHandler.HandlePostTask)
 	params := types.AddTaskParams{
 		TaskID: task.ID,
@@ -128,8 +137,11 @@ func TestAddTaskToProjectAlreadyAdded(t *testing.T) {
 		task           = fixtures.AddTask(store, "task01", "description of task01", time.Now().AddDate(0, 0, 2), false)
 		project        = fixtures.AddProject(store, "test-project", "test-project-0001", user.ID, []string{task.ID})
 		auth           = fixtures.AddAuth(store, user.ID)
-		token          = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AddProjectIDToTask(store, task, project.ID)
 	apiv1.Post("project/:id/task", projectHandler.HandlePostTask)
 	params := types.AddTaskParams{

@@ -1,19 +1,17 @@
 package api
 
 import (
-	"fmt"
-
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 func JWTAuthentication(authService service.AuthServicer) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		fmt.Println("--- JWT authentication")
+		logrus.Info("--- JWT authentication")
 
 		token, ok := c.GetReqHeaders()["Authorization"]
 		if !ok {
-			fmt.Println("token is not present in the header")
 			return ErrUnAuthorized()
 		}
 		tokenStr := token[0]

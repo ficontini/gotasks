@@ -40,7 +40,10 @@ func (h *AuthHandler) HandleAuthenticate(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	token := h.authService.CreateTokenFromAuth(auth)
+	token, err := h.authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		return err
+	}
 	resp := &types.AuthResponse{
 		Token: token,
 	}

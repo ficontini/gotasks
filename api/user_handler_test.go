@@ -29,8 +29,11 @@ func TestEnableUserSuccess(t *testing.T) {
 		admin       = apiv1.Group("/admin", AdminAuth)
 		handler     = NewUserHandler(service.NewUserService(store))
 		auth        = fixtures.AddAuth(store, adminUser.ID)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	admin.Put("/user/:id/enable", handler.HandleEnableUser)
 	req := makeRequest(http.MethodPut, fmt.Sprintf("/admin/user/%s/enable", user.ID), token, nil)
 	res := testRequest(t, app, req)
@@ -57,8 +60,11 @@ func TestEnableUserAlreadyEnabled(t *testing.T) {
 		apiv1       = app.Group("/", JWTAuthentication(authService))
 		admin       = apiv1.Group("/admin", AdminAuth)
 		handler     = NewUserHandler(service.NewUserService(store))
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	admin.Put("/user/:id/enable", handler.HandleEnableUser)
 	req := makeRequest(http.MethodPut, fmt.Sprintf("/admin/user/%s/enable", user.ID), token, nil)
 	res := testRequest(t, app, req)
@@ -79,8 +85,11 @@ func TestDisableUserSuccess(t *testing.T) {
 		apiv1       = app.Group("/", JWTAuthentication(authService))
 		admin       = apiv1.Group("/admin", AdminAuth)
 		handler     = NewUserHandler(service.NewUserService(store))
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	admin.Put("/user/:id/disable", handler.HandleDisableUser)
 	req := makeRequest(http.MethodPut, fmt.Sprintf("/admin/user/%s/disable", user.ID), token, nil)
 	res := testRequest(t, app, req)
@@ -106,8 +115,11 @@ func TestDisableUserWithWrongID(t *testing.T) {
 		admin       = apiv1.Group("/admin", AdminAuth)
 		handler     = NewUserHandler(service.NewUserService(store))
 		wrongID     = "609c4b22a2c2d9c3f83a01f6"
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	admin.Put("/user/:id/disable", handler.HandleDisableUser)
 	req := makeRequest(http.MethodPut, fmt.Sprintf("/admin/user/%s/disable", wrongID), token, nil)
 	res := testRequest(t, app, req)
@@ -126,8 +138,11 @@ func TestResetPasswordSuccess(t *testing.T) {
 		authService = service.NewAuthService(store)
 		apiv1       = app.Group("/", JWTAuthentication(authService))
 		handler     = NewUserHandler(service.NewUserService(store))
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiv1.Post("/reset-password", handler.HandleResetPassword)
 	params := types.ResetPasswordParams{
 		CurrentPassword: password,
@@ -156,8 +171,11 @@ func TestResetPasswordWithWrongCurrentPassword(t *testing.T) {
 		authService = service.NewAuthService(store)
 		apiv1       = app.Group("/", JWTAuthentication(authService))
 		handler     = NewUserHandler(service.NewUserService(store))
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	apiv1.Post("/reset-password", handler.HandleResetPassword)
 	params := types.ResetPasswordParams{
 		CurrentPassword: newpassword,

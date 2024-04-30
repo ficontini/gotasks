@@ -20,20 +20,14 @@ func NewAuthLogMiddleware(next AuthServicer) AuthServicer {
 }
 func (m *AuthLogMiddleware) AuthenticateUser(ctx context.Context, params *types.AuthParams) (auth *types.Auth, err error) {
 	defer func(start time.Time) {
-		var (
-			userID   string
-			authUUID string
-		)
-		if auth != nil {
-			userID = auth.UserID
-			authUUID = auth.AuthUUID
+		if err != nil {
+			logrus.WithError(err).Error("Failed to authenticate user")
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"took":   time.Since(start),
+				"userID": auth.UserID,
+			}).Info("AuthenticatedUser successfully completed")
 		}
-		logrus.WithFields(logrus.Fields{
-			"took":     time.Since(start),
-			"userID":   userID,
-			"authUUID": authUUID,
-			"err":      err,
-		}).Info("Authenticate user")
 	}(time.Now())
 	auth, err = m.next.AuthenticateUser(ctx, params)
 	return auth, err
@@ -41,12 +35,14 @@ func (m *AuthLogMiddleware) AuthenticateUser(ctx context.Context, params *types.
 
 func (m *AuthLogMiddleware) GetUser(ctx context.Context, claims jwt.MapClaims) (user *types.User, err error) {
 	defer func(start time.Time) {
-		var userID string
-		logrus.WithFields(logrus.Fields{
-			"took":   time.Since(start),
-			"userID": userID,
-			"err":    err,
-		}).Info("Get user")
+		if err != nil {
+			logrus.WithError(err).Error("Failed to get user")
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"took":   time.Since(start),
+				"userID": user.ID,
+			}).Info("Get user")
+		}
 	}(time.Now())
 	user, err = m.next.GetUser(ctx, claims)
 	return user, err
@@ -54,43 +50,34 @@ func (m *AuthLogMiddleware) GetUser(ctx context.Context, claims jwt.MapClaims) (
 
 func (m *AuthLogMiddleware) GetAuth(ctx context.Context, claims jwt.MapClaims) (auth *types.Auth, err error) {
 	defer func(start time.Time) {
-		var (
-			userID   string
-			authUUID string
-		)
-		if auth != nil {
-			userID = auth.UserID
-			authUUID = auth.AuthUUID
+		if err != nil {
+			logrus.WithError(err).Error("Failed to get auth")
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"took":   time.Since(start),
+				"userID": auth.UserID,
+			}).Info("Get auth")
 		}
-		logrus.WithFields(logrus.Fields{
-			"took":     time.Since(start),
-			"userID":   userID,
-			"authUUID": authUUID,
-			"err":      err,
-		}).Info("Get auth")
 	}(time.Now())
 	auth, err = m.next.GetAuth(ctx, claims)
 	return auth, err
 }
 
-func (m *AuthLogMiddleware) CreateTokenFromAuth(auth *types.Auth) (token string) {
+func (m *AuthLogMiddleware) CreateTokenFromAuth(auth *types.Auth) (token string, err error) {
 	defer func(start time.Time) {
-		logrus.WithFields(logrus.Fields{
-			"took":   time.Since(start),
-			"userID": auth.UserID,
-			"token":  token,
-		}).Info("Create token from auth")
+		if err != nil {
+			logrus.WithError(err).Error("Failed to create token from auth")
+		}
 	}(time.Now())
-	token = m.next.CreateTokenFromAuth(auth)
-	return token
+	token, err = m.next.CreateTokenFromAuth(auth)
+	return token, err
 }
 
 func (m *AuthLogMiddleware) ValidateToken(tokenStr string) (claims jwt.MapClaims, err error) {
 	defer func(start time.Time) {
-		logrus.WithFields(logrus.Fields{
-			"took": time.Since(start),
-			"err":  err,
-		}).Info("Validate token")
+		if err != nil {
+			logrus.WithError(err).Error("Failed to validate token")
+		}
 	}(time.Now())
 	claims, err = m.next.ValidateToken(tokenStr)
 	return claims, err

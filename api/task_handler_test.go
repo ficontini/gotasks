@@ -161,8 +161,11 @@ func TestCompleteTaskSuccess(t *testing.T) {
 		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
 		auth        = fixtures.AddAuth(store, james.ID)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, james.ID)
 	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
 	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
@@ -195,8 +198,11 @@ func TestCompleteTaskWithCompletedStatus(t *testing.T) {
 		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
 		auth        = fixtures.AddAuth(store, james.ID)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, james.ID)
 	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
 	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
@@ -218,8 +224,11 @@ func TestCompleteTaskWithAnotherAssignedUser(t *testing.T) {
 		auth        = fixtures.AddAuth(store, james.ID)
 		tom         = fixtures.AddUser(store, "tom", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, tom.ID)
 	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
 	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
@@ -240,8 +249,11 @@ func TestUpdateDueDateTaskSuccess(t *testing.T) {
 		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
 		auth        = fixtures.AddAuth(store, james.ID)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, james.ID)
 	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
 	params := types.UpdateDueDateTaskRequest{
@@ -280,8 +292,11 @@ func TestUpdateDueDateTaskWithWrongDate(t *testing.T) {
 		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
 		auth        = fixtures.AddAuth(store, james.ID)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, james.ID)
 	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
 	params := types.UpdateDueDateTaskRequest{
@@ -307,8 +322,11 @@ func TestUpdateDueDateTaskWithAnotherAssignedUser(t *testing.T) {
 		auth        = fixtures.AddAuth(store, james.ID)
 		tom         = fixtures.AddUser(store, "tom", "foo", "supersecurepassword", false, true)
 		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
-		token       = authService.CreateTokenFromAuth(auth)
 	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fixtures.AssignTaskToUser(store, task.ID, tom.ID)
 	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
 	params := types.UpdateDueDateTaskRequest{

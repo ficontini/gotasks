@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,7 +18,7 @@ var (
 		ErrorHandler: api.ErrorHandler,
 	}
 	loggerConfig = logger.Config{
-		Format: "INFO ${method}  ${path}  err= ${error} status = ${status}\n",
+		Format: "${status} - ${method} ${path}\n",
 	}
 )
 
@@ -68,4 +69,8 @@ func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
+	})
 }
