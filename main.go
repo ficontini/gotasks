@@ -18,7 +18,13 @@ var (
 		ErrorHandler: api.ErrorHandler,
 	}
 	loggerConfig = logger.Config{
-		Format: "${status} - ${method} ${path}\n",
+		Next: func(c *fiber.Ctx) bool {
+			logrus.WithFields(logrus.Fields{
+				"method": c.Method(),
+				"path":   c.Path(),
+			}).Info("Request")
+			return true
+		},
 	}
 )
 

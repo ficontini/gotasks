@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// TODO: Review
 func JWTAuthentication(authService service.AuthServicer) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		logrus.Info("--- JWT authentication")
