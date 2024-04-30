@@ -11,11 +11,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type AuthGetter interface {
+	GetUser(context.Context, jwt.MapClaims) (*types.User, error)
+	GetAuth(context.Context, jwt.MapClaims) (*types.Auth, error)
+}
+type AuthServicer interface {
+	AuthGetter
+	AuthenticateUser(context.Context, *types.AuthParams) (*types.Auth, error)
+	CreateTokenFromAuth(*types.Auth) string
+	ValidateToken(string) (jwt.MapClaims, error)
+}
 type AuthService struct {
 	store *db.Store
 }
 
-func NewAuthService(store *db.Store) *AuthService {
+func NewAuthService(store *db.Store) AuthServicer {
 	return &AuthService{
 		store: store,
 	}

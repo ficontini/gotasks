@@ -8,11 +8,29 @@ import (
 	"github.com/ficontini/gotasks/types"
 )
 
+type UserInserter interface {
+	CreateUser(context.Context, types.CreateUserParams) (*types.User, error)
+}
+type UserGetter interface {
+	GetUsers(context.Context, UserQueryParams) ([]*types.User, error)
+	GetUserByID(context.Context, string) (*types.User, error)
+}
+type UserUpdater interface {
+	EnableUser(context.Context, string) error
+	DisableUser(context.Context, string) error
+	ResetPassword(context.Context, *types.User, types.ResetPasswordParams) error
+	InvalidateJWT(context.Context, *types.Auth) error
+}
+type UserServicer interface {
+	UserInserter
+	UserGetter
+	UserUpdater
+}
 type UserService struct {
 	store *db.Store
 }
 
-func NewUserService(store *db.Store) *UserService {
+func NewUserService(store *db.Store) UserServicer {
 	return &UserService{
 		store: store,
 	}

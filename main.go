@@ -8,12 +8,16 @@ import (
 	"github.com/ficontini/gotasks/db"
 	"github.com/ficontini/gotasks/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
 )
 
 var (
 	config = fiber.Config{
 		ErrorHandler: api.ErrorHandler,
+	}
+	loggerConfig = logger.Config{
+		Format: "INFO ${method}  ${path}  err= ${error} status = ${status}\n",
 	}
 )
 
@@ -23,12 +27,14 @@ func main() {
 		panic(err)
 	}
 	var (
-		handler = api.NewHandler(service.NewService(store))
 		app     = fiber.New(config)
+		handler = api.NewHandler(service.NewService(store))
 		auth    = app.Group("/api")
 		apiv1   = app.Group("/api/v1", api.JWTAuthentication(service.NewAuthService(store)))
 		admin   = apiv1.Group("/admin", api.AdminAuth)
 	)
+	app.Use(logger.New(loggerConfig))
+
 	auth.Post("/auth", handler.Auth.HandleAuthenticate)
 
 	auth.Post("/user", handler.User.HandlePostUser)

@@ -10,12 +10,12 @@ import (
 )
 
 type UserHandler struct {
-	userService service.UserService
+	userService service.UserServicer
 }
 
-func NewUserHandler(userService *service.UserService) *UserHandler {
+func NewUserHandler(userService service.UserServicer) *UserHandler {
 	return &UserHandler{
-		userService: *userService,
+		userService: userService,
 	}
 }
 
