@@ -2,8 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -127,9 +125,7 @@ func (s *DynamoDBTaskStore) GetTasks(ctx context.Context, filter Filter, paginat
 		Limit:                     aws.Int32(int32(pagination.Limit)),
 	}
 	opts := NewDynamoDBQueryOptions(queryInput, pagination)
-	startT := time.Now()
 	collectiveResult, err := PaginatedDynamoDBQuery(ctx, s.client, opts)
-	fmt.Println("TIME::::::", time.Since(startT).Seconds())
 	if err != nil {
 		return nil, err
 	}

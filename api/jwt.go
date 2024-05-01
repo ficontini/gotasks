@@ -12,6 +12,7 @@ func JWTAuthentication(authService service.AuthServicer) fiber.Handler {
 
 		token, ok := c.GetReqHeaders()["Authorization"]
 		if !ok {
+			logrus.Error("token is not present in the header")
 			return ErrUnAuthorized()
 		}
 		tokenStr := token[0]

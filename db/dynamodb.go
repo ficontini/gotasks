@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	AwsProfileEnvName = "AWS_PROFILE"
+	AwsProfileEnvName = "GOTASKS_AWS_PROFILE"
 	dataTypeGSI       = "DataTypeGSI"
 )
 
@@ -32,10 +32,11 @@ func NewDynamoDBStore() (*Store, error) {
 	}, nil
 }
 func NewDynamoDBClient() (*dynamodb.Client, error) {
-	if err := SetupDynamoDBConfigFromEnv(); err != nil {
-		return nil, err
-	}
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(PROFILE))
+	// if err := SetupDynamoDBConfigFromEnv(); err != nil {
+	// 	return nil, err
+	// }
+	//cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(PROFILE))
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 		return nil, err
