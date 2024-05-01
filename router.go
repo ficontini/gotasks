@@ -9,9 +9,10 @@ import (
 
 func MakeRoutes(app *fiber.App, store *db.Store) {
 	var (
-		handler = api.NewHandler(service.NewService(store))
+		svc     = service.NewService(store)
+		handler = api.NewHandler(svc)
 		auth    = app.Group("/api")
-		apiv1   = app.Group("/api/v1", api.JWTAuthentication(service.NewAuthService(store)))
+		apiv1   = app.Group("/api/v1", api.JWTAuthentication(svc.Auth))
 		admin   = apiv1.Group("/admin", api.AdminAuth)
 	)
 

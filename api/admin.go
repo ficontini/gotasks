@@ -9,6 +9,7 @@ import (
 func AdminAuth(c *fiber.Ctx) error {
 	user, ok := c.Context().UserValue("user").(*types.User)
 	if !ok {
+		logrus.Error("unauthorized user")
 		return ErrUnAuthorized()
 	}
 	if !user.IsAdmin {

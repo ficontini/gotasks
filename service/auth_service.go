@@ -58,7 +58,6 @@ func (svc *AuthService) GetUser(ctx context.Context, claims jwt.MapClaims) (*typ
 	return user, nil
 }
 func (svc *AuthService) GetAuth(ctx context.Context, claims jwt.MapClaims) (*types.Auth, error) {
-
 	filter := &types.AuthFilter{
 		UserID:   claims["id"].(string),
 		AuthUUID: claims["auth_uuid"].(string),
