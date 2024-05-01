@@ -40,7 +40,9 @@ func NewDynamoDBClient() (*dynamodb.Client, error) {
 		log.Fatalf("unable to load SDK config, %v", err)
 		return nil, err
 	}
-	return dynamodb.NewFromConfig(cfg), nil
+	return dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
+		o.EnableAcceptEncodingGzip = true
+	}), nil
 }
 
 func SetupDynamoDBConfigFromEnv() error {
@@ -78,7 +80,9 @@ func NewDynamoDBQueryOptions(queryInput *dynamodb.QueryInput, pagination *Pagina
 }
 
 func PaginatedDynamoDBQuery(ctx context.Context, client *dynamodb.Client, opts *DynamoDBQueryOptions) ([]map[string]dynamodbtypes.AttributeValue, error) {
-	var collectiveResult []map[string]dynamodbtypes.AttributeValue
+	var (
+		collectiveResult []map[string]dynamodbtypes.AttributeValue
+	)
 	paginator := dynamodb.NewQueryPaginator(client, opts.QueryInput)
 	for {
 		if !paginator.HasMorePages() {
