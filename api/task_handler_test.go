@@ -28,7 +28,7 @@ func TestPostTaskSuccess(t *testing.T) {
 	app.Post("/", taskHandler.HandlePostTask)
 
 	params := types.NewTaskParams{
-		Title:       "fake-task",
+		Name:        "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
 	}
@@ -40,8 +40,8 @@ func TestPostTaskSuccess(t *testing.T) {
 	if len(task.ID) == 0 {
 		t.Fatalf("expecting a task id to be set")
 	}
-	if task.Title != params.Title {
-		t.Fatalf("expected title %s but got %s", params.Title, task.Title)
+	if task.Name != params.Name {
+		t.Fatalf("expected title %s but got %s", params.Name, task.Name)
 	}
 	if task.Description != params.Description {
 		t.Fatalf("expected description %s but got %s", params.Description, task.Description)
@@ -62,7 +62,7 @@ func TestPostTaskWithWrongDueDate(t *testing.T) {
 	app.Post("/", taskHandler.HandlePostTask)
 
 	params := types.NewTaskParams{
-		Title:       "fake-task",
+		Name:        "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(-1, 0, 5),
 	}
@@ -83,7 +83,7 @@ func TestPostInvalidTitle(t *testing.T) {
 	app.Post("/", taskHandler.HandlePostTask)
 
 	params := types.NewTaskParams{
-		Title:       "aa",
+		Name:        "aa",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
 	}

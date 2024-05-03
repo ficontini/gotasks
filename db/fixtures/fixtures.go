@@ -10,9 +10,9 @@ import (
 	"github.com/ficontini/gotasks/types"
 )
 
-func AddProject(store *db.Store, title, description string, userID string, tasks []string) *types.Project {
+func AddProject(store *db.Store, name, description string, userID string, tasks []string) *types.Project {
 	project := &types.Project{
-		Title:       title,
+		Name:        name,
 		Description: description,
 		UserID:      userID,
 		Tasks:       tasks,
@@ -23,9 +23,9 @@ func AddProject(store *db.Store, title, description string, userID string, tasks
 	}
 	return insertedProject
 }
-func AddTask(store *db.Store, title, description string, dueTo time.Time, completed bool) *types.Task {
+func AddTask(store *db.Store, name, description string, dueTo time.Time, completed bool) *types.Task {
 	task := types.NewTaskFromParams(types.NewTaskParams{
-		Title:       title,
+		Name:        name,
 		Description: description,
 		DueDate:     dueTo,
 	})

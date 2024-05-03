@@ -34,7 +34,7 @@ func TestPostProjectSuccess(t *testing.T) {
 	}
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := types.NewProjectParams{
-		Title:       "test-project",
+		Name:        "test-project",
 		Description: "description of this project",
 	}
 	jsonBytes := marshallParamsToJSON(t, params)
@@ -45,8 +45,8 @@ func TestPostProjectSuccess(t *testing.T) {
 	if project.UserID != user.ID {
 		t.Fatalf("user ID mismatch: %s , %s", project.UserID, user.ID)
 	}
-	if project.Title != params.Title {
-		t.Fatalf("expected %s but got %s", params.Title, project.Title)
+	if project.Name != params.Name {
+		t.Fatalf("expected %s but got %s", params.Name, project.Name)
 	}
 	if project.Description != params.Description {
 		t.Fatalf("expected %s but got %s", params.Description, project.Description)
@@ -71,7 +71,7 @@ func TestPostProjectInvalidTitle(t *testing.T) {
 	}
 	apiv1.Post("/", projectHandler.HandlePostProject)
 	params := types.NewProjectParams{
-		Title:       "",
+		Name:        "",
 		Description: "description of this project",
 	}
 	jsonBytes := marshallParamsToJSON(t, params)

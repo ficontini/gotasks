@@ -95,11 +95,11 @@ func setupTestDynamoDB(t *testing.T) *TestDynamoDB {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Fatal(err)
 	}
-	// if err := db.SetupDynamoDBConfigFromEnv(); err != nil {
-	// 	log.Fatal(err)
-	// }
-	//cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(db.PROFILE))
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err := db.SetupDynamoDBConfigFromEnv(); err != nil {
+		log.Fatal(err)
+	}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(db.PROFILE))
+	//cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}

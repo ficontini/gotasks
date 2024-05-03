@@ -9,7 +9,7 @@ const TaskDataType = "task"
 
 type Task struct {
 	ID          string    `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
-	Title       string    `bson:"title" dynamodbav:"title" json:"title"`
+	Name        string    `bson:"name" dynamodbav:"name" json:"name"`
 	Description string    `bson:"description,omitempty" dynamodbav:"description" json:"description,omitempty"`
 	DueDate     time.Time `bson:"dueDate" dynamodbav:"dueDate" json:"dueDate"`
 	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
@@ -19,14 +19,14 @@ type Task struct {
 }
 
 type NewTaskParams struct {
-	Title       string    `json:"title"`
+	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	DueDate     time.Time `json:"dueDate"`
 }
 
 func NewTaskFromParams(params NewTaskParams) *Task {
 	return &Task{
-		Title:       params.Title,
+		Name:        params.Name,
 		Description: params.Description,
 		DueDate:     params.DueDate,
 		DataType:    TaskDataType,
@@ -34,8 +34,8 @@ func NewTaskFromParams(params NewTaskParams) *Task {
 }
 func (params NewTaskParams) Validate() map[string]string {
 	errors := map[string]string{}
-	if len(params.Title) < minDescriptionLen {
-		errors["title"] = fmt.Sprintf("Title length should be at least %d", minTitleLen)
+	if len(params.Name) < minNameLen {
+		errors["title"] = fmt.Sprintf("Title length should be at least %d", minNameLen)
 	}
 	if len(params.Description) < minDescriptionLen {
 		errors["description"] = fmt.Sprintf("Description length should be at least %d", minDescriptionLen)
