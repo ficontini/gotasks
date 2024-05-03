@@ -3,27 +3,14 @@ package api
 import (
 	"net/http"
 
-	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 )
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
-	var (
-		fields = logrus.Fields{}
-	)
-	user, ok := c.Context().Value("user").(*types.User)
-	if ok {
-		fields["userID"] = user.ID
-	}
 	if apiError, ok := err.(Error); ok {
-		fields["err"] = apiError
-		logrus.WithFields(fields).Error()
 		return c.Status(apiError.Code).JSON(apiError)
 	}
 	apiError := NewError(http.StatusInternalServerError, err.Error())
-	fields["err"] = apiError
-	logrus.WithFields(fields).Error()
 	return c.Status(apiError.Code).JSON(apiError)
 }
 
