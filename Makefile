@@ -4,11 +4,6 @@ build:
 	@go build -o bin/api
 seed: 
 	@go run scripts/seed.go
-seed-and-deploy:
-	@make delete
-	@sleep 80
-	@make deploy
-	@make seed
 run: build
 	@./bin/api
 test: 

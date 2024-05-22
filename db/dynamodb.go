@@ -2,9 +2,7 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -13,11 +11,8 @@ import (
 )
 
 const (
-	AwsProfileEnvName = "GOTASKS_AWS_PROFILE"
-	dataTypeGSI       = "DataTypeGSI"
+	dataTypeGSI = "DataTypeGSI"
 )
-
-var PROFILE string
 
 func NewDynamoDBStore() (*Store, error) {
 	client, err := NewDynamoDBClient()
@@ -32,11 +27,7 @@ func NewDynamoDBStore() (*Store, error) {
 	}, nil
 }
 func NewDynamoDBClient() (*dynamodb.Client, error) {
-	if err := SetupDynamoDBConfigFromEnv(); err != nil {
-		return nil, err
-	}
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithSharedConfigProfile(PROFILE))
-	//cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 		return nil, err
@@ -44,14 +35,6 @@ func NewDynamoDBClient() (*dynamodb.Client, error) {
 	return dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
 		o.EnableAcceptEncodingGzip = true
 	}), nil
-}
-
-func SetupDynamoDBConfigFromEnv() error {
-	PROFILE = os.Getenv(AwsProfileEnvName)
-	if PROFILE == "" {
-		return fmt.Errorf("%s env variable not set", AwsProfileEnvName)
-	}
-	return nil
 }
 
 func GetKey(idStr string) (map[string]dynamodbtypes.AttributeValue, error) {
