@@ -13,10 +13,10 @@ git clone https://github.com/ficontini/gotasks.git
 ```
 2. Rename .env.example to .env and fill with your environment variables
 3. Setup database
-3.1. DynamoDB 
-```bash
-make deploy
-```
+    1. DynamoDB 
+    ```bash
+    make deploy
+    ```
 4. Seeding the database
 ```bash
 make seed
