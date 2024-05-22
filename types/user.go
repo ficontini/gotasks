@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	UserDataType        = "user"
 	minPasswordLen      = 7
 	minFirstNameLen     = 5
 	minLastNameLen      = 5
@@ -15,16 +16,18 @@ const (
 )
 
 type User struct {
-	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string `bson:"firstName" json:"firstName"`
-	LastName          string `bson:"lastName" json:"lastName"`
-	Email             string `bson:"email" json:"email"`
-	EncryptedPassword string `bson:"encryptedPassword" json:"-"`
-	IsAdmin           bool   `bson:"isAdmin" json:"-"`
+	ID                string `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
+	FirstName         string `bson:"firstName" dynamodbav:"firstName" json:"firstName"`
+	LastName          string `bson:"lastName" dynamodbav:"lastName" json:"lastName"`
+	Email             string `bson:"email" dynamodbav:"email" json:"email"`
+	EncryptedPassword string `bson:"encryptedPassword" dynamodbav:"encryptedPassword" json:"-"`
+	IsAdmin           bool   `bson:"isAdmin" dynamodbav:"isAdmin" json:"-"`
+	Enabled           bool   `bson:"enabled" dynamodbav:"enabled" json:"-"`
+	DataType          string `bson:"-" dynamodbav:"dataType" json:"-"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {
-	encpw, err := bcrypt.GenerateFromPassword([]byte(params.Password), defaultCost)
+	encpw, err := generateEncryptedPassword(params.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +35,8 @@ func NewUserFromParams(params CreateUserParams) (*User, error) {
 		FirstName:         params.FirstName,
 		LastName:          params.LastName,
 		Email:             params.Email,
-		EncryptedPassword: string(encpw),
+		EncryptedPassword: encpw,
+		DataType:          UserDataType,
 	}, nil
 }
 func (u *User) IsPasswordValid(pw string) bool {
@@ -66,4 +70,30 @@ func (p CreateUserParams) Validate() map[string]string {
 func isEmailValid(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	return emailRegex.MatchString(email)
+}
+func generateEncryptedPassword(password string) (string, error) {
+	encpw, err := bcrypt.GenerateFromPassword([]byte(password), defaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(encpw), nil
+}
+
+type ResetPasswordParams struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
+func (p ResetPasswordParams) Validate() map[string]string {
+	errors := map[string]string{}
+	if len(p.CurrentPassword) < minPasswordLen {
+		errors["currentPassword"] = fmt.Sprintf("current password length must be at least %d characters", minPasswordLen)
+	}
+	if len(p.NewPassword) < minPasswordLen {
+		errors["newPassword"] = fmt.Sprintf("new password length must be at least %d characters", minPasswordLen)
+	}
+	return errors
+}
+func (p ResetPasswordParams) GeneratePassword() (string, error) {
+	return generateEncryptedPassword(p.NewPassword)
 }

@@ -5,33 +5,37 @@ import (
 	"time"
 )
 
+const TaskDataType = "task"
+
 type Task struct {
-	ID          string    `bson:"_id,omitempty" json:"id,omitempty"`
-	Title       string    `bson:"title" json:"title"`
-	Description string    `bson:"description,omitempty" json:"description,omitempty"`
-	DueDate     time.Time `bson:"dueDate" json:"dueDate"`
-	Completed   bool      `bson:"completed" json:"completed"`
-	Projects    []string  `bson:"projects" json:"projects,omitempty"`
+	ID          string    `bson:"_id,omitempty" dynamodbav:"ID" json:"id,omitempty"`
+	Name        string    `bson:"name" dynamodbav:"name" json:"name"`
+	Description string    `bson:"description,omitempty" dynamodbav:"description" json:"description,omitempty"`
+	DueDate     time.Time `bson:"dueDate" dynamodbav:"dueDate" json:"dueDate"`
+	Completed   bool      `bson:"completed" dynamodbav:"completed" json:"completed"`
+	AssignedTo  string    `bson:"assignedTo" dynamodbav:"assignedTo" json:"assignedTo,omitempty"`
+	ProjectID   string    `bson:"projectID" dynamodbav:"projectID" json:"projectID,omitempty"`
+	DataType    string    `bson:"-" dynamodbav:"dataType" json:"-"`
 }
 
-type CreateTaskParams struct {
-	Title       string    `json:"title"`
+type NewTaskParams struct {
+	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	DueDate     time.Time `json:"dueDate"`
 }
 
-func NewTaskFromParams(params CreateTaskParams) *Task {
+func NewTaskFromParams(params NewTaskParams) *Task {
 	return &Task{
-		Title:       params.Title,
+		Name:        params.Name,
 		Description: params.Description,
 		DueDate:     params.DueDate,
-		Projects:    []string{},
+		DataType:    TaskDataType,
 	}
 }
-func (params CreateTaskParams) Validate() map[string]string {
+func (params NewTaskParams) Validate() map[string]string {
 	errors := map[string]string{}
-	if len(params.Title) < minDescriptionLen {
-		errors["title"] = fmt.Sprintf("Title length should be at least %d", minTitleLen)
+	if len(params.Name) < minNameLen {
+		errors["title"] = fmt.Sprintf("Title length should be at least %d", minNameLen)
 	}
 	if len(params.Description) < minDescriptionLen {
 		errors["description"] = fmt.Sprintf("Description length should be at least %d", minDescriptionLen)
@@ -45,12 +49,19 @@ func isDateValid(date time.Time) bool {
 	return date.After(time.Now())
 }
 
-type UpdateTaskParams struct {
-	Completed bool
+type UpdateTaskRequest struct {
+	TaskID string
+	UserID string `json:"userID"`
 }
 
-func (p UpdateTaskParams) ToMap() map[string]any {
-	return map[string]any{
-		"completed": p.Completed,
+type UpdateDueDateTaskRequest struct {
+	DueDate    time.Time `json:"dueDate"`
+	AssignedTo string
+}
+
+func (req UpdateDueDateTaskRequest) Validate() error {
+	if !isDateValid(req.DueDate) {
+		return fmt.Errorf("date %v is not valid", req.DueDate)
 	}
+	return nil
 }

@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+  UserTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: ID
+          AttributeType: S
+        - 
+          AttributeName: email
+          AttributeType: S
+        - 
+          AttributeName: dataType
+          AttributeType: S
+      KeySchema: 
+        - 
+          AttributeName: ID
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      GlobalSecondaryIndexes: 
+      - 
+        IndexName: "EmailGSI"
+        KeySchema: 
+          - 
+            AttributeName: email
+            KeyType: HASH
+        Projection: 
+          ProjectionType: ALL
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+      - 
+        IndexName: "DataTypeGSI"
+        KeySchema: 
+          - 
+            AttributeName: dataType
+            KeyType: HASH
+          - AttributeName: ID
+            KeyType: RANGE
+        Projection: 
+          ProjectionType: ALL
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+      TableName: users
+  TaskTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: ID
+          AttributeType: S
+        -
+          AttributeName: dataType
+          AttributeType: S
+      KeySchema: 
+        - 
+          AttributeName: ID
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      GlobalSecondaryIndexes: 
+      - 
+        IndexName: "DataTypeGSI"
+        KeySchema: 
+          - 
+            AttributeName: dataType
+            KeyType: HASH
+        Projection: 
+          ProjectionType: ALL
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+      TableName: tasks
+  ProjectTable: 
+      Type: AWS::DynamoDB::Table
+      Properties: 
+        AttributeDefinitions: 
+          - 
+            AttributeName: ID
+            AttributeType: S
+        KeySchema: 
+          - 
+            AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: projects 

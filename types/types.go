@@ -1,6 +1,6 @@
 package types
 
 const (
-	minTitleLen       = 5
+	minNameLen        = 5
 	minDescriptionLen = 5
 )

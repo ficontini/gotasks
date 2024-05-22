@@ -1,6 +1,30 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+
+	"github.com/twinj/uuid"
+)
+
+type Auth struct {
+	UserID         string `bson:"userID" dynamodbav:"userID"`
+	AuthUUID       string `bson:"authUUID" dynamodbav:"authUUID"`
+	ExpirationTime int64  `bson:"expirationTime" dynamodbav:"expirationTime"`
+}
+
+func NewAuth(userID string) *Auth {
+	return &Auth{
+		UserID:         userID,
+		AuthUUID:       uuid.NewV4().String(),
+		ExpirationTime: time.Now().Add(time.Hour * 4).Unix(),
+	}
+}
+
+type AuthFilter struct {
+	UserID   string `dynamodbav:"userID"`
+	AuthUUID string `dynamodbav:"authUUID"`
+}
 
 type AuthParams struct {
 	Email    string `json:"email"`

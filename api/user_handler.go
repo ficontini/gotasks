@@ -1,21 +1,21 @@
 package api
 
 import (
-	"context"
+	"errors"
 	"net/http"
 
-	"github.com/ficontini/gotasks/db"
+	"github.com/ficontini/gotasks/service"
 	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler struct {
-	userStore db.UserStore
+	userService service.UserServicer
 }
 
-func NewUserHandler(userStore db.UserStore) *UserHandler {
+func NewUserHandler(userService service.UserServicer) *UserHandler {
 	return &UserHandler{
-		userStore: userStore,
+		userService: userService,
 	}
 }
 
@@ -27,21 +27,108 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	if errors := params.Validate(); len(errors) > 0 {
 		return c.Status(http.StatusBadRequest).JSON(errors)
 	}
-	if h.isEmailAlreadyInUse(c.Context(), params.Email) {
-		return ErrBadRequestCustomMessage("email already in use")
-	}
-	user, err := types.NewUserFromParams(params)
+	insertedUser, err := h.userService.CreateUser(c.Context(), params)
 	if err != nil {
-		return err
-	}
-	insertedUser, err := h.userStore.InsertUser(c.Context(), user)
-	if err != nil {
+		if errors.Is(err, service.ErrEmailAlreadyInUse) {
+			return ErrBadRequestCustomMessage(err.Error())
+		}
 		return err
 	}
 	return c.JSON(insertedUser)
 }
+func (h *UserHandler) HandleEnableUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	if err := h.userService.EnableUser(c.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrUserStateUnchanged):
+			return ErrConflict(err.Error())
+		default:
+			return err
+		}
+	}
+	return c.JSON(fiber.Map{"enabled": id})
+}
+func (h *UserHandler) HandleDisableUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	if err := h.userService.DisableUser(c.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
+			return ErrResourceNotFound(err.Error())
+		case errors.Is(err, service.ErrUserStateUnchanged):
+			return ErrConflict(err.Error())
+		default:
+			return err
+		}
+	}
 
-func (h *UserHandler) isEmailAlreadyInUse(ctx context.Context, email string) bool {
-	user, _ := h.userStore.GetUserByEmail(ctx, email)
-	return user != nil
+	return c.JSON(fiber.Map{"disabled": id})
+}
+func (h *UserHandler) HandleResetPassword(c *fiber.Ctx) error {
+	user, err := getUserAuth(c)
+	if err != nil {
+		return err
+	}
+	auth, err := getAuth(c)
+	if err != nil {
+		return err
+	}
+	var params types.ResetPasswordParams
+	if err := c.BodyParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	if errors := params.Validate(); len(errors) > 0 {
+		return c.Status(http.StatusBadRequest).JSON(errors)
+	}
+	if err := h.userService.ResetPassword(c.Context(), user, params); err != nil {
+		if errors.Is(err, service.ErrCurrentPassword) {
+			return ErrUnAuthorized()
+		}
+		return err
+	}
+	if err := h.userService.InvalidateJWT(c.Context(), auth); err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"password": "updated"})
+}
+func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
+	user, err := getUserAuth(c)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(user)
+}
+func (h *UserHandler) HandleAdminGetUser(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if len(id) == 0 {
+		return ErrInvalidID()
+	}
+	user, err := h.userService.GetUserByID(c.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			return ErrResourceNotFound(err.Error())
+		}
+		return err
+	}
+	return c.JSON(user)
+}
+func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
+	var params service.UserQueryParams
+	if err := c.QueryParser(&params); err != nil {
+		return ErrBadRequest()
+	}
+	users, err := h.userService.GetUsers(c.Context(), params)
+	if err != nil {
+		return err
+	}
+	resp := NewResourceResponse(users, len(users), params.Page)
+	return c.JSON(resp)
 }

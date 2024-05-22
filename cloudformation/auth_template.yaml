@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+  myDynamoDBTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: userID
+          AttributeType: S
+        - 
+          AttributeName: authUUID
+          AttributeType: S
+      KeySchema: 
+        - 
+          AttributeName: userID
+          KeyType: HASH
+        - 
+          AttributeName: authUUID
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TimeToLiveSpecification:
+        AttributeName: expirationTime
+        Enabled: true
+      TableName: auths

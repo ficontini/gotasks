@@ -2,14 +2,16 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/ficontini/gotasks/db/fixtures"
+	"github.com/ficontini/gotasks/service"
 	"github.com/ficontini/gotasks/types"
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,22 +21,27 @@ func TestPostTaskSuccess(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New()
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Store())
+		taskHandler = NewTaskHandler(taskService)
 	)
 
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
-		Title:       "fake-task",
+	params := types.NewTaskParams{
+		Name:        "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
 	}
-	task := sendPostRequest(t, app, params, http.StatusOK)
+	b := marshallParamsToJSON(t, params)
+	req := makeUnauthenticatedRequest(http.MethodPost, "/", bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusOK, res.StatusCode)
+	task := decodeToTask(t, res)
 	if len(task.ID) == 0 {
 		t.Fatalf("expecting a task id to be set")
 	}
-	if task.Title != params.Title {
-		t.Fatalf("expected title %s but got %s", params.Title, task.Title)
+	if task.Name != params.Name {
+		t.Fatalf("expected title %s but got %s", params.Name, task.Name)
 	}
 	if task.Description != params.Description {
 		t.Fatalf("expected description %s but got %s", params.Description, task.Description)
@@ -46,35 +53,45 @@ func TestPostTaskSuccess(t *testing.T) {
 func TestPostTaskWithWrongDueDate(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Store())
+		taskHandler = NewTaskHandler(taskService)
+	)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
-		Title:       "fake-task",
+	params := types.NewTaskParams{
+		Name:        "fake-task",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(-1, 0, 5),
 	}
-	task := sendPostRequest(t, app, params, http.StatusBadRequest)
-	if len(task.ID) > 0 {
-		t.Fatalf("task shouldn't be created")
-	}
+	b := marshallParamsToJSON(t, params)
+	req := makeUnauthenticatedRequest(http.MethodPost, "/", bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
 func TestPostInvalidTitle(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Store())
+		taskHandler = NewTaskHandler(taskService)
+	)
 	app.Post("/", taskHandler.HandlePostTask)
 
-	params := types.CreateTaskParams{
-		Title:       "aa",
+	params := types.NewTaskParams{
+		Name:        "aa",
 		Description: "fake description",
 		DueDate:     time.Now().AddDate(0, 0, 5),
 	}
-	task := sendPostRequest(t, app, params, http.StatusBadRequest)
+	b := marshallParamsToJSON(t, params)
+	req := makeUnauthenticatedRequest(http.MethodPost, "/", bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
+	task := decodeToTask(t, res)
 	if len(task.ID) > 0 {
 		t.Fatalf("task shouldn't be created")
 	}
@@ -84,16 +101,15 @@ func TestPostEmptyRequestBody(t *testing.T) {
 	db := setup(t)
 	defer db.teardown(t)
 
-	app := fiber.New()
-	taskHandler := NewTaskHandler(db.Task)
+	var (
+		app         = fiber.New()
+		taskService = service.NewTaskService(db.Store())
+		taskHandler = NewTaskHandler(taskService)
+	)
 	app.Post("/", taskHandler.HandlePostTask)
 
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("{}"))
-	req.Header.Add("Content-Type", "application/json")
-	res, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := makeUnauthenticatedRequest(http.MethodPost, "/", bytes.NewBufferString("{}"))
+	res := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
 
@@ -102,24 +118,20 @@ func TestDeleteTaskSuccess(t *testing.T) {
 	defer db.teardown(t)
 
 	var (
-		insertedTask = fixtures.AddTask(db.Store, "fake-task", "fake task description", time.Now().AddDate(0, 0, 2), false)
+		store        = db.Store()
+		insertedTask = fixtures.AddTask(store, "fake-task", "fake task description", time.Now().AddDate(0, 0, 2), false)
 		app          = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler  = NewTaskHandler(db.Task)
+		taskService  = service.NewTaskService(store)
+		taskHandler  = NewTaskHandler(taskService)
 	)
 	app.Delete("/:id", taskHandler.HandleDeleteTask)
 	app.Get("/:id", taskHandler.HandleGetTask)
 
-	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/%s", insertedTask.ID), nil)
-	res, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := makeUnauthenticatedRequest(http.MethodDelete, fmt.Sprintf("/%s", insertedTask.ID), nil)
+	res := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusOK, res.StatusCode)
-	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s", insertedTask.ID), nil)
-	res, err = app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req = makeUnauthenticatedRequest(http.MethodGet, fmt.Sprintf("/%s", insertedTask.ID), nil)
+	res = testRequest(t, app, req)
 	checkStatusCode(t, http.StatusNotFound, res.StatusCode)
 }
 func TestDeleteTaskWithWrongID(t *testing.T) {
@@ -127,15 +139,13 @@ func TestDeleteTaskWithWrongID(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
+		taskService = service.NewTaskService(db.Store())
+		taskHandler = NewTaskHandler(taskService)
 		wrongID     = "609c4b22a2c2d9c3f83a01f6"
 	)
 	app.Delete("/:id", taskHandler.HandleDeleteTask)
-	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/%s", wrongID), nil)
-	res, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := makeUnauthenticatedRequest(http.MethodDelete, fmt.Sprintf("/%s", wrongID), nil)
+	res := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusNotFound, res.StatusCode)
 }
 func TestCompleteTaskSuccess(t *testing.T) {
@@ -143,15 +153,23 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	defer db.teardown(t)
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
-		task        = fixtures.AddTask(db.Store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
+		auth        = fixtures.AddAuth(store, james.ID)
 	)
-	app.Post("/:id/complete", taskHandler.HandleCompleteTask)
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), nil)
-	res, err := app.Test(req)
+	token, err := authService.CreateTokenFromAuth(auth)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fixtures.AssignTaskToUser(store, task.ID, james.ID)
+	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
+	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
+	res := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusOK, res.StatusCode)
 	var result map[string]string
 	json.NewDecoder(res.Body).Decode(&result)
@@ -159,13 +177,9 @@ func TestCompleteTaskSuccess(t *testing.T) {
 		t.Fatal("updating a different task")
 	}
 	app.Get("/:id", taskHandler.HandleGetTask)
-	req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s", task.ID), nil)
-	res, err = app.Test(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var updatedTask *types.Task
-	json.NewDecoder(res.Body).Decode(&updatedTask)
+	req = makeRequest(http.MethodGet, fmt.Sprintf("/%s", task.ID), token, nil)
+	res = testRequest(t, app, req)
+	updatedTask := decodeToTask(t, res)
 	if !updatedTask.Completed {
 		t.Fatalf("task wiht %s expected complete", updatedTask.ID)
 	}
@@ -176,27 +190,159 @@ func TestCompleteTaskWithCompletedStatus(t *testing.T) {
 
 	var (
 		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
-		taskHandler = NewTaskHandler(db.Task)
-		task        = fixtures.AddTask(db.Store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
+		auth        = fixtures.AddAuth(store, james.ID)
 	)
-	app.Post("/:id/complete", taskHandler.HandleCompleteTask)
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), nil)
-	res, err := app.Test(req)
+	token, err := authService.CreateTokenFromAuth(auth)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fixtures.AssignTaskToUser(store, task.ID, james.ID)
+	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
+	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
+	res := testRequest(t, app, req)
 	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
 }
-func sendPostRequest(t *testing.T, app *fiber.App, params types.CreateTaskParams, expectedStatus int) *types.Task {
-	b, _ := json.Marshal(params)
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(b))
-	req.Header.Add("Content-Type", "application/json")
-	res, err := app.Test(req)
+func TestCompleteTaskWithAnotherAssignedUser(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+
+	var (
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		auth        = fixtures.AddAuth(store, james.ID)
+		tom         = fixtures.AddUser(store, "tom", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
+	)
+	token, err := authService.CreateTokenFromAuth(auth)
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkStatusCode(t, expectedStatus, res.StatusCode)
+	fixtures.AssignTaskToUser(store, task.ID, tom.ID)
+	apiv1.Post("/:id/complete", taskHandler.HandleCompleteTask)
+	req := makeRequest(http.MethodPost, fmt.Sprintf("/%s/complete", task.ID), token, nil)
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusUnauthorized, res.StatusCode)
+
+}
+func TestUpdateDueDateTaskSuccess(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+	var (
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
+		auth        = fixtures.AddAuth(store, james.ID)
+	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixtures.AssignTaskToUser(store, task.ID, james.ID)
+	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
+	params := types.UpdateDueDateTaskRequest{
+		DueDate: time.Now().AddDate(0, 1, 5),
+	}
+	b := marshallParamsToJSON(t, params)
+	req := makeRequest(http.MethodPut, fmt.Sprintf("/%s/due-date", task.ID), token, bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusOK, res.StatusCode)
+	var result map[string]string
+	json.NewDecoder(res.Body).Decode(&result)
+	if result["updated"] != task.ID {
+		t.Fatal("updating a different task")
+	}
+	updatedTask, err := store.Task.GetTaskByID(context.Background(), task.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	expecedDate := params.DueDate.UTC().Round(time.Second)
+	actualDate := updatedTask.DueDate.UTC().Round(time.Second)
+	if !actualDate.Equal(expecedDate) {
+		t.Fatalf("expected %v, but got %v", expecedDate, actualDate)
+	}
+
+}
+func TestUpdateDueDateTaskWithWrongDate(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+	var (
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), false)
+		auth        = fixtures.AddAuth(store, james.ID)
+	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixtures.AssignTaskToUser(store, task.ID, james.ID)
+	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
+	params := types.UpdateDueDateTaskRequest{
+		DueDate: time.Now().AddDate(0, -3, 5),
+	}
+	b := marshallParamsToJSON(t, params)
+	req := makeRequest(http.MethodPut, fmt.Sprintf("/%s/due-date", task.ID), token, bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusBadRequest, res.StatusCode)
+}
+func TestUpdateDueDateTaskWithAnotherAssignedUser(t *testing.T) {
+	db := setup(t)
+	defer db.teardown(t)
+
+	var (
+		app         = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		store       = db.Store()
+		authService = service.NewAuthService(store)
+		apiv1       = app.Group("/", JWTAuthentication(authService))
+		taskService = service.NewTaskService(store)
+		taskHandler = NewTaskHandler(taskService)
+		james       = fixtures.AddUser(store, "james", "foo", "supersecurepassword", false, true)
+		auth        = fixtures.AddAuth(store, james.ID)
+		tom         = fixtures.AddUser(store, "tom", "foo", "supersecurepassword", false, true)
+		task        = fixtures.AddTask(store, "fake task", "fake task description", time.Now().AddDate(0, 0, 5), true)
+	)
+	token, err := authService.CreateTokenFromAuth(auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixtures.AssignTaskToUser(store, task.ID, tom.ID)
+	apiv1.Put("/:id/due-date", taskHandler.HandlePutDueDateTask)
+	params := types.UpdateDueDateTaskRequest{
+		DueDate: time.Now().AddDate(0, 1, 5),
+	}
+	b := marshallParamsToJSON(t, params)
+	req := makeRequest(http.MethodPut, fmt.Sprintf("/%s/due-date", task.ID), token, bytes.NewReader(b))
+	res := testRequest(t, app, req)
+	checkStatusCode(t, http.StatusUnauthorized, res.StatusCode)
+
+}
+
+func decodeToTask(t *testing.T, response *http.Response) *types.Task {
 	var task *types.Task
-	json.NewDecoder(res.Body).Decode(&task)
+	if err := json.NewDecoder(response.Body).Decode(&task); err != nil {
+		t.Fatal(err)
+	}
 	return task
 }

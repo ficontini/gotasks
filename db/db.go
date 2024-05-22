@@ -2,64 +2,66 @@ package db
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"os"
 
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
-	DBNAME        = "gotasks"
-	DBURI         = "mongodb://localhost:27017"
-	DEFAULT_PAGE  = 1
-	DEFAULT_LIMIT = 10
+	MongoEndpoint      = "MONGO_DB_URI"
+	MongoDBNameEnvName = "MONGO_DB_NAME"
 )
 
-// TODO: Review
-var ErrorNotFound = errors.New("resource not found")
-
-type Map map[string]any
-
-func SetUpdateMap(update Map) Map {
-	return Map{"$set": update}
-}
-func PushToKey(key string, value interface{}) Map {
-	return Map{"$push": Map{key: value}}
-}
-func NewMap(key string, value interface{}) Map {
-	return Map{key: value}
-}
-
-type Pagination struct {
-	Page  int64
-	Limit int64
-}
-
-// TODO: Review
-func (p *Pagination) CheckDefaultPaginationValues() {
-	if p.Limit <= 0 {
-		p.Limit = DEFAULT_LIMIT
-	}
-	if p.Page <= 0 {
-		p.Page = DEFAULT_PAGE
-	}
-}
-func (p *Pagination) getOptions() *options.FindOptions {
-	p.CheckDefaultPaginationValues()
-	opts := &options.FindOptions{}
-	opts.SetSkip((p.Page - 1) * p.Limit)
-	opts.SetLimit(p.Limit)
-	return opts
-}
+var (
+	DBNAME string
+	DBURI  string
+)
 
 type Store struct {
-	Task    TaskStore
+	Auth    AuthStore
 	User    UserStore
+	Task    TaskStore
 	Project ProjectStore
 }
 
-type Deleter interface {
-	Delete(context.Context, string) error
+func NewStore() (*Store, error) {
+	client, err := NewMongoClient()
+	if err != nil {
+		return nil, err
+	}
+	dynamoClient, err := NewDynamoDBClient()
+	if err != nil {
+		return nil, err
+	}
+	taskStore := NewMongoTaskStore(client)
+	return &Store{
+		Auth:    NewDynamoDBAuthStore(dynamoClient),
+		User:    NewMongoUserStore(client),
+		Task:    taskStore,
+		Project: NewMongoProjectStore(client, taskStore),
+	}, nil
 }
-type Updater interface {
-	Update(context.Context, Map, Map) error
+func NewMongoClient() (*mongo.Client, error) {
+	if err := SetupMongoConfigFromEnv(); err != nil {
+		return nil, err
+	}
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(DBURI))
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func SetupMongoConfigFromEnv() error {
+	DBURI = os.Getenv(MongoEndpoint)
+	if DBURI == "" {
+		return fmt.Errorf("%s env variable not set", MongoEndpoint)
+	}
+	DBNAME = os.Getenv(MongoDBNameEnvName)
+	if DBNAME == "" {
+		return fmt.Errorf("%s env variable not set", MongoDBNameEnvName)
+	}
+	return nil
 }
