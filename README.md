@@ -18,19 +18,28 @@ Gotasks is a RESTful API built with Go using the Fiber framework. It provides en
 git clone https://github.com/ficontini/gotasks.git
 ```
 2. Rename .env.example to .env and fill with your environment variables
-3. Setup database
-    1. DynamoDB 
-    ```
-    make deploy
-    ```
+3. Setup database (dynamodb)
+```
+make deploy
+```
 4. Seeding the database
 ```
 make seed
 ```
 ## Usage
+1. Run 
 ```
 make run 
 ```
+2. Docker
+    1. Create image
+    ```
+    docker build -t gotasks .
+    ```
+    2. Run container
+    ```
+    docker run -v ~/.aws:/root/.aws:ro -p 3000:3000 gotasks:latest
+    ```
 ## API Endpoints
 ### Authentication
 * `POST /api/auth` : Authenticate a user
