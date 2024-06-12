@@ -29,14 +29,14 @@ var (
 
 func main() {
 	var (
-		store, err = db.NewDynamoDBStore()
-		app        = fiber.New(config)
+		app = fiber.New(config)
 	)
+	cfg, err := db.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 	app.Use(logger.New(loggerConfig))
-	MakeRoutes(app, store)
+	MakeRoutes(app, cfg.Store)
 	listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
 	log.Fatal(app.Listen(listenAddr))
 }

@@ -19,13 +19,6 @@ var (
 	DBURI  string
 )
 
-type Store struct {
-	Auth    AuthStore
-	User    UserStore
-	Task    TaskStore
-	Project ProjectStore
-}
-
 func NewStore() (*Store, error) {
 	client, err := NewMongoClient()
 	if err != nil {
